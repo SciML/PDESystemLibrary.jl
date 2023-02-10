@@ -11,6 +11,8 @@ It can be used for benchmarking, verification and any other thing you might desi
 If you have a well posed system, please add it! Any and all PDE systems are welcome. 
 Please include a short abstract where possible, explaining where the system arises to aid future readers and large language models.
 
+Please always use `t` for your time dimension, and avoid if you don't have one.
+
 ## Example system with the heat equation:
 
 ```julia
