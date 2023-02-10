@@ -2,7 +2,6 @@ using PDESystemLibrary
 PSL = PDESystemLibrary
 
 using NeuralPDE, Lux, OptimizationOptimJL
-import ModelingToolkit: Interval
 
 for ex in PSL.all_systems
     @testset "Example: $(ex.name) with MethodOfLines.jl" begin
