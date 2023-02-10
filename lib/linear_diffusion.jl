@@ -28,8 +28,7 @@ begin
 
     analytic = [u(t, x) => u_exact]
 
-    @named heat_1d = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)],
-                               parameters = [D => 1.0])
+    @named heat_1d = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0], analytic = analytic)
 
     heat_1d
 end
