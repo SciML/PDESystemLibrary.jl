@@ -1,0 +1,4 @@
+name = "PDESystemLibrary"
+uuid = "d14f9848-fe58-4297-bd22-c1aba6f3000d"
+authors = ["xtalax <alex.lemony@gmail.com>"]
+version = "0.1.0"
