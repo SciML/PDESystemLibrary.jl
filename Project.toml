@@ -4,4 +4,5 @@ authors = ["xtalax <alex.lemony@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
