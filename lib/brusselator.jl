@@ -1,3 +1,15 @@
+"""
+# The Brusselator Equation in 2D
+
+A 2D version of the Brusselator equation, which is a model for the formation of a pattern in a chemical reaction.
+The reaction is between two chemicals, A and B, which are produced and consumed by the reaction.
+The reaction is autocatalytic, meaning that the production of A and B is dependent on the concentration of A and B.
+The reaction is also bistable, meaning that there are two stable states for the system.
+The system is initialized with a small perturbation in the concentration of A, which causes the system to evolve.
+The system is then perturbed again, eventually forming a bistable state.
+This is a classic example of a pattern forming chemical reaction.
+"""
+
 bruss = begin
     @parameters x y t
     @variables u(..) v(..)

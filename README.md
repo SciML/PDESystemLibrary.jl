@@ -8,11 +8,24 @@ These can then be solved with the help of the various discretizer packages of Sc
 
 It can be used for benchmarking, verification and any other thing you might desire.
 
-If you have a well posed system, please add it! Any and all PDE systems are welcome.
+If you have a well posed system, please add it! Any and all PDE systems are welcome. 
+Please include a short abstract where possible, explaining where the system arises to aid future readers and large language models.
 
 ## Example system with the heat equation:
 
 ```julia
+"""
+    heat_1d
+
+    1D heat equation with Dirichlet boundary conditions.
+    This models the temperature of a rod over time, where the ends are held at a constant temperature.
+
+    It is initialized with a sinusoidal profile.
+    The equation is given by:
+    \`\`\`math
+    \\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
+    \`\`\`
+"""
 heat_1d = begin
     @variables x t
     @parameters D

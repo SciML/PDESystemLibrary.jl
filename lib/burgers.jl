@@ -1,3 +1,10 @@
+"""
+# The Inviscid Burgers Equation in 1D
+
+The Inviscid Burgers equation is a model for the evolution of a fluid.
+The fluid is assumed to be incompressible and inviscid, meaning that the fluid is not viscous and does not change in volume.
+The fluid is also assumed to be one-dimensional, meaning that the fluid is only moving in one direction.
+"""
 inviscid_burgers_monotonic = begin
     @parameters x t
     @variables u(..)
@@ -27,6 +34,12 @@ inviscid_burgers_monotonic = begin
     inviscid_burgers_monotonic
 end
 
+"""
+# The Burgers Equation in 2D
+
+The Burgers equation is a model for the evolution of a fluid.
+This time the model has a viscosity term, which means that the fluid is viscous. The fluid is also assumed to be two-dimensional.
+"""
 burgers_2d = begin
     @parameters x y t
     @variables u(..) v(..)
