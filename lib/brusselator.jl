@@ -8,8 +8,31 @@ The reaction is also bistable, meaning that there are two stable states for the 
 The system is initialized with a small perturbation in the concentration of A, which causes the system to evolve.
 The system is then perturbed again, eventually forming a bistable state.
 This is a classic example of a pattern forming chemical reaction.
-"""
 
+The Brusselator equation is given by:
+
+```math
+\\frac{\\partial u}{\\partial t} = 1 + v u^2 - 4.4 u + \\alpha \\Delta u + f(x, y, t)
+```
+
+```math
+\\frac{\\partial v}{\\partial t} = 3.4 - vu^2 + u^2 + \\alpha \\Delta v
+```
+
+where ``\\alpha`` is a parameter that controls the diffusion of the system, and ``f(x, y, t)`` is a forcing term.
+
+The initial conditions are given by:
+
+```math
+u(x, y, 0) = 22(y (1 - y))^{\\frac{3}{2}}
+```
+
+```math
+v(x, y, 0) = 27(x (1 - x))^{\\frac{3}{2}}
+```
+
+The boundary conditions are periodic in both ``x`` and ``y``.
+"""
 bruss = begin
     @parameters x y t
     @variables u(..) v(..)
