@@ -5,7 +5,8 @@ This library contains various lists of systems dominated by different properties
 These can then be solved with the help of the various discretizer packages of SciML such as:
 - [MethodOfLines.jl](https://www.github.com/SciML/MethodOfLines.jl)
 - [NeuralPDE.jl](https://www.github.com/SciML/NeuralPDE.jl)
-for benchmarking, verification and any other thing you might desire.
+
+It can be used for benchmarking, verification and any other thing you might desire.
 
 If you have a well posed system, please add it! Any and all PDE systems are welcome.
 
