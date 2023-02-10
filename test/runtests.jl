@@ -10,5 +10,5 @@ if GROUP == "All" || GROUP == "MOL"
 end
 
 if GROUP == "All" || GROUP == "NeuralPDE"
-    #@time @safetestsets begin include("neuralpde_test.jl") end
+    @time @safetestsets begin include("neuralpde_test.jl") end
 end
