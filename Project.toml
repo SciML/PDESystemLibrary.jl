@@ -5,11 +5,15 @@ version = "0.1.0"
 
 [deps]
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [extras]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+OptimizationOptimisers = "42dfb2eb-d2b4-4451-abcd-913932933ac1"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
