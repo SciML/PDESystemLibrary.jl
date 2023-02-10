@@ -1,10 +1,10 @@
 using PDESystemLibrary
 PSL = PDESystemLibrary
 
-using MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve
+using ModelingToolkit, MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve
 
 for ex in PSL.all_systems
-    @testset "Example: $(ex.name)" begin
+    @testset "Example: $(ex.name) with MethodOfLines.jl" begin
         ivs = filter(x -> !isequal(Symbol(x), :t), ex.ivs)
         dxs = map(x -> x => (supremum(d) - infimum(d))/10, ivs)
         if length(ivs) == 0
