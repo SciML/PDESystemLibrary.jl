@@ -1,15 +1,15 @@
 """
-    heat_1d
+# The Heat Equation in 1D with Dirichlet Boundary Conditions.
 
-    1D heat equation with Dirichlet boundary conditions.
-    This models the temperature of a rod over time, where the ends are held at a constant temperature.
+1D heat equation with Dirichlet boundary conditions.
+This models the temperature of a rod over time, where the ends are held at a constant temperature.
 
-    It is initialized with a sinusoidal profile.
-    The equation is given by:
+It is initialized with a sinusoidal profile.
+The equation is given by:
 
-    ```math
-    \\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
-    ```
+```math
+\\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
+```
 """
 begin
     @variables x t
