@@ -24,9 +24,9 @@ Please always use `t` for your time dimension, and avoid if you don't have one.
 
     It is initialized with a sinusoidal profile.
     The equation is given by:
-    \`\`\`math
+    ```math
     \\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
-    \`\`\`
+    ```
 """
 heat_1d = begin
     @variables x t
