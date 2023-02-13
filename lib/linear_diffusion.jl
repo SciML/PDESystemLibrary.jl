@@ -19,8 +19,11 @@ begin
     Dt = Differential(t)
 
     eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
-    bcs = [u(0, x) ~ sin(2pi * x), u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
-    domains = [t ∈ IntervalDomain(0.0, 1.0), x ∈ IntervalDomain(0.0, 1.0)]
+    bcs = [u(0, x) ~ sin(2pi * x),
+           u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
+
+    domains = [t ∈ IntervalDomain(0.0, 1.0),
+               x ∈ IntervalDomain(0.0, 1.0)]
 
     analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
 
