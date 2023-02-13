@@ -75,19 +75,19 @@ function brusselator_2d()
     xyd_brusselator = range(0, stop = 1, length = N)
 
     limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
-    function brusselator_2d_loop(du, ud, p, t)
+    function brusselator_2d_loop(du, ud, p, td)
         A, B, alpha, dx = p
         alpha = alpha / dx^2
         @inbounds for I in CartesianIndices((N, N))
             i, j = Tuple(I)
-            x, y = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
+            xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
             ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
                                  limit(j - 1, N)
             du[i, j, 1] = alpha *
                           (ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
                           4ud[i, j, 1]) +
                           B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
-                          brusselator_f(x, y, t)
+                          brusselator_f(xd, yd, td)
             du[i, j, 2] = alpha *
                           (ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
                            4ud[i, j, 2]) +
@@ -100,10 +100,10 @@ function brusselator_2d()
         N = length(xyd)
         ud = zeros(N, N, 2)
         for I in CartesianIndices((N, N))
-            x = xyd[I[1]]
-            y = xyd[I[2]]
-            ud[I, 1] = 22 * (y * (1 - y))^(3 / 2)
-            ud[I, 2] = 27 * (x * (1 - x))^(3 / 2)
+            xd = xyd[I[1]]
+            yd = xyd[I[2]]
+            ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
+            ud[I, 2] = 27 * (xd * (1 - xd))^(3 / 2)
         end
         ud
     end
