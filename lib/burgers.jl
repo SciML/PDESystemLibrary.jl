@@ -3,7 +3,7 @@
 
 The Inviscid Burgers equation is a model for the evolution of a fluid.
 The fluid is assumed to be incompressible and inviscid, meaning that the fluid is not viscous and does not change in volume.
-The fluid is also assumed to be one-dimensional, meaning that the fluid is only moving in one direction.
+The fluid is also assumed to be one-dimensional, meaning that the fluid is only moving in one axis.
 """
 inviscid_burgers_monotonic = begin
     @parameters x t
@@ -15,7 +15,7 @@ inviscid_burgers_monotonic = begin
     t_min = 0.0
     t_max = 6.0
 
-    analytic_u(t, x) = x / (t + 1)
+    analytic = u(t, x) ~ x / (t + 1)
 
     eq = Dt(u(t, x)) ~ -u(t, x) * Dx(u(t, x))
 
@@ -28,8 +28,10 @@ inviscid_burgers_monotonic = begin
 
     dx = 0.05
 
+    tags = ["1D", "Monotonic", "Inviscid", "Burgers", "Advection", "Dirichlet"]
+
     @named inviscid_burgers_monotonic = PDESystem(eq, bcs, domains, [t, x], [u(t, x)];
-                                                  analytic = analytic_u)
+                                                  analytic = analytic, metadata = tags)
 
     inviscid_burgers_monotonic
 end
@@ -57,8 +59,8 @@ burgers_2d = begin
 
     #Exact solutions from: https://www.sciencedirect.com/science/article/pii/S0898122110003883
 
-    u_exact(x, y, t) = 3 / 4 - 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
-    v_exact(x, y, t) = 3 / 4 + 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
+    analytic = [u(x, y, t) ~ 3 / 4 - 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32))),
+        v(x, y, t) ~ 3 / 4 + 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))]
 
     eq = [
         Dt(u(x, y, t)) + u(x, y, t) * Dx(u(x, y, t)) + v(x, y, t) * Dy(u(x, y, t)) ~ (1 / R) *
@@ -91,10 +93,10 @@ burgers_2d = begin
         v(1, y, t) ~ v_exact(1, y, t),
         v(x, 1, t) ~ v_exact(x, 1, t)]
 
-    analytic = [u(x, y, t) => u_exact(x, y, t),
-        v(x, y, t) => v_exact(x, y, t)]
+    tags = ["2D", "Non-Monotonic", "Viscous", "Burgers", "Advection", "Dirichlet"]
 
-    @named burgers_2d = PDESystem(eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)])
+    @named burgers_2d = PDESystem(eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)],
+                                  analytic = analytic, metadata = tags)
 
     burgers_2d
 end

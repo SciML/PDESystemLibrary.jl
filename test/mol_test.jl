@@ -4,7 +4,7 @@ PSL = PDESystemLibrary
 using ModelingToolkit, MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve
 
 for ex in PSL.all_systems
-    @testset "Example: $(ex.name) with MethodOfLines.jl" begin
+    @testset "Example with MethodOfLines.jl: $(ex.name)\n Equations: $(ex.eqs) \nBCs/ICs: $(ex.bcs)" begin
         ivs = filter(x -> !isequal(Symbol(x), :t), ex.ivs)
         dxs = map(x -> x => (supremum(d) - infimum(d))/10, ivs)
         if length(ivs) == 0
