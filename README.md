@@ -25,9 +25,7 @@ This models the temperature of a rod over time, where the ends are held at a con
 It is initialized with a sinusoidal profile.
 The equation is given by:
 
-```math
-\\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
-```
+[Insert LaTeX here]
 """
 function heat_1d1()
     @variables x t u(..)
