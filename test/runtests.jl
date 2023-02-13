@@ -14,3 +14,4 @@ end
 # if GROUP == "All" || GROUP == "NeuralPDE"
 #     @time @safetestset "Test against NeuralPDE.jl" begin include("neuralpde_test.jl") end
 # end
+#
