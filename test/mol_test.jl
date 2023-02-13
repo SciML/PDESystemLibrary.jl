@@ -3,10 +3,15 @@ PSL = PDESystemLibrary
 
 using ModelingToolkit, MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve
 
+N = 100
+
 for ex in PSL.all_systems
-    @testset "Example with MethodOfLines.jl: $(ex.name)\n Equations: $(ex.eqs) \nBCs/ICs: $(ex.bcs)" begin
+    @testset "Example: $(ex.name)" begin
         ivs = filter(x -> !isequal(Symbol(x), :t), ex.ivs)
-        dxs = map(x -> x => (supremum(d) - infimum(d))/10, ivs)
+        dxs = map(ivs) do x
+            xdomain = ex.domain[findfirst(d -> isequal(x, d.variables), ex.domain)]
+            x => (supremum(xdomain.domain) - infimum(xdomain.domain))/(floor(N^(1/length(ivs))) - 1)
+        end
         if length(ivs) == 0
             continue
         elseif length(ivs) == length(ex.ivs)

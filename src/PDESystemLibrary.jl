@@ -1,5 +1,7 @@
 module PDESystemLibrary
 using ModelingToolkit, DomainSets
+using OrdinaryDiffEq
+using Interpolations
 
 using Markdown
 using Random

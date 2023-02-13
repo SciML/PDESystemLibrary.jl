@@ -33,7 +33,7 @@ v(x, y, 0) = 27(x (1 - x))^{\\frac{3}{2}}
 
 The boundary conditions are periodic in both ``x`` and ``y``.
 """
-bruss = begin
+function brusselator_2d()
     @parameters x y t
     @variables u(..) v(..)
     Dt = Differential(t)
@@ -71,40 +71,41 @@ bruss = begin
         v(x, 0, t) ~ v(x, 1, t)]
 
     # Solve reference problem
+    N = 32
     xyd_brusselator = range(0, stop = 1, length = N)
-    brusselator_f(x, y, t) = (((x - 0.3)^2 + (y - 0.6)^2) <= 0.1^2) * (t >= 1.1) * 5.0
+
     limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
-    function brusselator_2d_loop(du, u, p, t)
+    function brusselator_2d_loop(du, ud, p, td)
         A, B, alpha, dx = p
         alpha = alpha / dx^2
         @inbounds for I in CartesianIndices((N, N))
             i, j = Tuple(I)
-            x, y = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
+            xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
             ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
                                  limit(j - 1, N)
             du[i, j, 1] = alpha *
-                          (u[im1, j, 1] + u[ip1, j, 1] + u[i, jp1, 1] + u[i, jm1, 1] -
-                           4u[i, j, 1]) +
-                          B + u[i, j, 1]^2 * u[i, j, 2] - (A + 1) * u[i, j, 1] +
-                          brusselator_f(x, y, t)
+                          (ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
+                          4ud[i, j, 1]) +
+                          B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
+                          brusselator_f(xd, yd, td)
             du[i, j, 2] = alpha *
-                          (u[im1, j, 2] + u[ip1, j, 2] + u[i, jp1, 2] + u[i, jm1, 2] -
-                           4u[i, j, 2]) +
-                          A * u[i, j, 1] - u[i, j, 1]^2 * u[i, j, 2]
+                          (ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
+                           4ud[i, j, 2]) +
+                          A * ud[i, j, 1] - ud[i, j, 1]^2 * ud[i, j, 2]
         end
     end
     p = (3.4, 1.0, 10.0, step(xyd_brusselator))
 
     function init_brusselator_2d(xyd)
         N = length(xyd)
-        u = zeros(N, N, 2)
+        ud = zeros(N, N, 2)
         for I in CartesianIndices((N, N))
-            x = xyd[I[1]]
-            y = xyd[I[2]]
-            u[I, 1] = 22 * (y * (1 - y))^(3 / 2)
-            u[I, 2] = 27 * (x * (1 - x))^(3 / 2)
+            xd = xyd[I[1]]
+            yd = xyd[I[2]]
+            ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
+            ud[I, 2] = 27 * (xd * (1 - xd))^(3 / 2)
         end
-        u
+        ud
     end
     u0_manual = init_brusselator_2d(xyd_brusselator)
     prob = ODEProblem(brusselator_2d_loop, u0_manual, (0.0, 11.5), p)
@@ -114,9 +115,9 @@ bruss = begin
     # Create Interpolation for reference solution
     u_ref = zeros(N, N, length(msol.t))
     v_ref = zeros(N, N, length(msol.t))
-    for (i, u) in enumerate(msol.u)
-        u_ref[:, :, i] = u[:, :, 1]
-        v_ref[:, :, i] = u[:, :, 2]
+    for (i, ud) in enumerate(msol.u)
+        u_ref[:, :, i] = ud[:, :, 1]
+        v_ref[:, :, i] = ud[:, :, 2]
     end
 
     nodes = (xyd_brusselator, xyd_brusselator, msol.t)
@@ -142,5 +143,4 @@ bruss = begin
     bruss
 end
 
-push!(all_systems, bruss)
-push!(nonlinear_systems, bruss)
+push!(all_systems, brusselator_2d())
