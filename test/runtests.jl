@@ -1,5 +1,5 @@
- # The test is simply that all of the examples build!
- using SafeTestsets
+# The test is simply that all of the examples build!
+using SafeTestsets
 
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = Sys.iswindows() && haskey(ENV, "APPVEYOR")

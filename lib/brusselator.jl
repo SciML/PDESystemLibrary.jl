@@ -85,7 +85,7 @@ function brusselator_2d()
                                  limit(j - 1, N)
             du[i, j, 1] = alpha *
                           (ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
-                          4ud[i, j, 1]) +
+                           4ud[i, j, 1]) +
                           B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
                           brusselator_f(xd, yd, td)
             du[i, j, 2] = alpha *
