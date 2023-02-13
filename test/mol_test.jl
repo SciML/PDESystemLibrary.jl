@@ -9,14 +9,14 @@ for ex in PSL.all_systems
         dxs = map(x -> x => (supremum(d) - infimum(d))/10, ivs)
         if length(ivs) == 0
             continue
-        elseif length(ivs) == length(ex.ivs)
+        elseif length(ivs) == length($(ex.ivs))
             disc = MOLFiniteDifference(dxs)
-            prob = discretize(ex, disc)
+            prob = discretize($ex, disc)
             sol = NonlinerSolve.solve(prob, NewtonRaphsom())
         else
             @parameters t
             disc = MOLFiniteDifference(dxs, t)
-            prob = discretize(ex, disc)
+            prob = discretize($ex, disc)
             sol = solve(prob, FBDF())
         end
     end

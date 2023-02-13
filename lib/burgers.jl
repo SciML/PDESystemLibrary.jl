@@ -5,7 +5,7 @@ The Inviscid Burgers equation is a model for the evolution of a fluid.
 The fluid is assumed to be incompressible and inviscid, meaning that the fluid is not viscous and does not change in volume.
 The fluid is also assumed to be one-dimensional, meaning that the fluid is only moving in one axis.
 """
-inviscid_burgers_monotonic = begin
+function inviscid_burgers_monotonic()
     @parameters x t
     @variables u(..)
     Dx = Differential(x)
@@ -16,6 +16,8 @@ inviscid_burgers_monotonic = begin
     t_max = 6.0
 
     analytic = u(t, x) ~ x / (t + 1)
+
+    analytic_u(t, x) = x / (t + 1)
 
     eq = Dt(u(t, x)) ~ -u(t, x) * Dx(u(t, x))
 
@@ -42,7 +44,7 @@ end
 The Burgers equation is a model for the evolution of a fluid.
 This time the model has a viscosity term, which means that the fluid is viscous. The fluid is also assumed to be two-dimensional.
 """
-burgers_2d = begin
+function burgers_2d()
     @parameters x y t
     @variables u(..) v(..)
     Dt = Differential(t)
@@ -59,8 +61,10 @@ burgers_2d = begin
 
     #Exact solutions from: https://www.sciencedirect.com/science/article/pii/S0898122110003883
 
-    analytic = [u(x, y, t) ~ 3 / 4 - 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32))),
-        v(x, y, t) ~ 3 / 4 + 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))]
+    u_exact(x, y, t) = 3 / 4 - 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
+    v_exact(x, y, t) = 3 / 4 + 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
+    analytic = [u(x, y, t) ~ u_exact(x, y, t),
+        v(x, y, t) ~ v_exact(x, y, t)]
 
     eq = [
         Dt(u(x, y, t)) + u(x, y, t) * Dx(u(x, y, t)) + v(x, y, t) * Dy(u(x, y, t)) ~ (1 / R) *
@@ -101,4 +105,4 @@ burgers_2d = begin
     burgers_2d
 end
 
-all_systems = vcat(all_systems, [inviscid_burgers_monotonic, burgers_2d])
+all_systems = vcat(all_systems, [inviscid_burgers_monotonic(), burgers_2d()])

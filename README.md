@@ -8,7 +8,7 @@ These can then be solved with the help of the various discretizer packages of Sc
 
 It can be used for benchmarking, verification, research in to discretization methods, and any other ideas you might have.
 
-If you have a well posed system, please add it! Any and all PDE systems are welcome. 
+If you have a well posed system, please add it! Any and all PDE systems are welcome, even if they cannot currently be solved by discretizer packages.
 Please include a short abstract where possible, explaining where the system arises to aid future readers and large language models.
 
 Please always use `t` for your time dimension, and avoid if you don't have one.
@@ -25,20 +25,23 @@ This models the temperature of a rod over time, where the ends are held at a con
 It is initialized with a sinusoidal profile.
 The equation is given by:
 
-    ```math
-    \\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
-    ```
+```math
+\\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
+```
 """
-begin
-    @variables x t
+function heat_1d1()
+    @variables x t u(..)
     @parameters D
 
     Dxx = Differential(x)
     Dt = Differential(t)
 
     eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
-    bcs = [u(0, x) ~ sin(2pi * x), u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
-    domains = [t ∈ IntervalDomain(0.0, 1.0), x ∈ IntervalDomain(0.0, 1.0)]
+    bcs = [u(0, x) ~ sin(2pi * x),
+           u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
+
+    domains = [t ∈ Interval(0.0, 1.0),
+               x ∈ Interval(0.0, 1.0)]
 
     analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
 
@@ -47,11 +50,10 @@ begin
     @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
                                analytic = analytic, metadata = tags)
 
-    heat_1d
+    heat_1d1
 end
 
-# Add to the lists
-push!(all_systems, heat_1d)
+push!(all_systems, heat_1d1())
 ```
 
 ## A note on analytic solutions

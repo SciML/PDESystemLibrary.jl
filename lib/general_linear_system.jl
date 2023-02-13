@@ -33,7 +33,7 @@ adv = build_with_tags(general_system(1.0, 0.0, 0.0, 0.0, :adv),
 diff = build_with_tags(general_system(0.0, 1.0, 0.0, 0.0, :diff),
                        ["1D", "Diffusion", "Linear", "Periodic"])
 adv3 = build_with_tags(general_system(0.0, 0.0, 1.0, 0.0, :adv3),
-                       ["1D", "3rd Order""Linear", "Periodic"])
+                       ["1D", "3rd Order", "Linear", "Periodic"])
 diff4 = build_with_tags(general_system(0.0, 0.0, 0.0, 1.0, :diff4),
                         ["1D", "4th Order", "Linear", "Periodic"])
 
