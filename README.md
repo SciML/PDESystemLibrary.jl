@@ -1,4 +1,4 @@
-# PDESystemLibrary
+# PDESystemLibrary.jl
 A library of systems of partial differential equations, as defined with ModelingToolkit.jl in Julia.
 
 This library contains a list of systems, with tags highlighting their properties included in the `metadata` field.
@@ -25,9 +25,9 @@ This models the temperature of a rod over time, where the ends are held at a con
 It is initialized with a sinusoidal profile.
 The equation is given by:
 
-```math
-\\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
-```
+    ```math
+    \\frac{\\partial u}{\\partial t} = D \\frac{\\partial^2 u}{\\partial x^2}
+    ```
 """
 begin
     @variables x t
@@ -65,4 +65,5 @@ Reference functions should have the same argument signature as their parent vari
 with an argument `ps` prepended, this argument takes your symbolic parameter values in the order they are specified in the system. 
 If this is discretized, you will need to interpolate it. See `lib/brusselator.jl` for an example of this. (Extrapolations are not required)
 
-Reference functions should be provided as a vector of pairs fr
+Reference functions should be provided as a vector of pairs from the symbolic form to their reference function.
+
