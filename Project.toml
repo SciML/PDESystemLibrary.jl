@@ -11,6 +11,13 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
+[compat]
+DomainSets = "0.5, 0.6"
+Interpolations = "0.12"
+Markdown = "0.14"
+ModelingToolkit = "8"
+OrdinaryDiffEq = "6"
+
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"

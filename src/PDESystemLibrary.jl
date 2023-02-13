@@ -15,5 +15,11 @@ include("../lib/linear_diffusion.jl")
 include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
 
-# Don't export anything, just add your systems to the lists and import it downstream.
+function get_pdesys_with_tags(tags...)
+    filter(all_systems) do ex
+        all(t -> t in ex.metadata, tags)
+    end
+end
+
+export get_pdesys_with_tags
 end # module PDESystemLibrary
