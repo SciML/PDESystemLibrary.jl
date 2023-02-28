@@ -113,7 +113,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         v = ps[2]
         a = z/L * exp((t*v^2)/(4k) + (v*L)/(2k))
         s = mapreduce((+), 1:maxiters) do n
-            acu = (2 * (-1)^n *v^2 * exp(-k*λ(n)*t + (v*L)/(2k))*(exp(k*λ(n)*t + v(t*v^2)/(4k)) - 1)) / (n*π * (4*k^2*λ(n) + v^2))
+            acu = (2 * (-1)^n *v^2 * exp(-k*λ(n)*t + (v*L)/(2k))*(exp(k*λ(n)*t + (t*v^2)/(4k)) - 1)) / (n*π * (4*k^2*λ(n) + v^2))
             acu += 2/L*((-1)^n)*exp(v*L/(2k))*exp(-k*λ(n)*t)/sqrt(λ(n))
             acu *= sin(λ(n)*z)
 
