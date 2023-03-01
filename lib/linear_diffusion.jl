@@ -62,17 +62,18 @@ function heat_1d_neumann()
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ Dxx(u(t, x))
     bcs = [u(0, x) ~ cos(x),
-           Dx(u(t, 0)) ~ 0,
-           Dx(u(t, Float64(pi))) ~ 0]
+        Dx(u(t, 0)) ~ 0,
+        Dx(u(t, Float64(pi))) ~ 0]
 
     # Space and time domains
     domains = [t ∈ Interval(0.0, 1.0),
-    x ∈ Interval(0.0, Float64(pi))]
+        x ∈ Interval(0.0, Float64(pi))]
 
     analytic = [u(t, x) ~ exp(-t) * cos(x)]
 
     tags = ["1D", "Neumann", "Linear", "Diffusion", "Heat"]
     # PDE system
-    @named pdesys = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], analytic = analytic, metadata = tags)
+    @named pdesys = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], analytic = analytic,
+                              metadata = tags)
 end
 push!(all_systems, heat_1d_neumann())

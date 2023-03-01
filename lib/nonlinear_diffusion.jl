@@ -20,19 +20,20 @@ function spherical_laplacian()
 
     eq = Dt(u(t, r)) ~ 4 / r^2 * Dr(r^2 * Dr(u(t, r)))
     bcs = [u(0, r) ~ sin(r) / r,
-           Dr(u(t, 0)) ~ 0,
-           u(t, 1) ~ exp(-4t) * sin(1)]
+        Dr(u(t, 0)) ~ 0,
+        u(t, 1) ~ exp(-4t) * sin(1)]
 
     # Space and time domains
     domains = [t ∈ Interval(0.0, 1.0),
-               r ∈ Interval(0.0, 1.0)]
+        r ∈ Interval(0.0, 1.0)]
 
     u_exact = [u(t, r) ~ exp.(-4t) * sin.(r) ./ r]
 
     tags = ["1D", "Dirichlet", "Neumann", "Spherical", "Diffusion"]
 
     # PDE system
-    @named sph = PDESystem(eq, bcs, domains, [t, r], [u(t, r)], analytic = u_exact, metadata = tags)
+    @named sph = PDESystem(eq, bcs, domains, [t, r], [u(t, r)], analytic = u_exact,
+                           metadata = tags)
 
     sph
 end
