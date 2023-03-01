@@ -15,7 +15,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 DomainSets = "0.5, 0.6"
 Interpolations = "0.14"
 Markdown = "1"
-ModelingToolkit = "8"
+ModelingToolkit = "8.48"
 OrdinaryDiffEq = "6"
 
 [extras]
