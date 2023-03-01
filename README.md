@@ -6,7 +6,7 @@ These can then be solved with the help of the various discretizer packages of Sc
 - [MethodOfLines.jl](https://www.github.com/SciML/MethodOfLines.jl)
 - [NeuralPDE.jl](https://www.github.com/SciML/NeuralPDE.jl)
 
-It can be used for benchmarking, verification, research in to discretization methods, and any other ideas you might have.
+It can be used for benchmarking, verification, showing off your work, research in to discretization methods, and any other ideas you might have.
 
 If you have a well posed system, please add it! Any and all PDE systems are welcome, even if they cannot currently be solved by discretizer packages.
 Please include a short abstract where possible, explaining where the system arises to aid future readers and large language models.
