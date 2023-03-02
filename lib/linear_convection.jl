@@ -95,7 +95,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
     bcs = [u(0, x) ~ f(x),
         u(t, 0) ~ 0.0]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 2 / v),
+    domains = [t ∈ Interval(0.0, 2 / ps[1]),
         x ∈ Interval(0.0, 1.0)]
 
     # Analytic solution
@@ -167,9 +167,9 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     eq = Dt(u(t, x)) ~ v * Dx(u(t, x))
 
     bcs = [u(0, x) ~ f(x),
-        u(t, 2 / v) ~ 0.0]
+        u(t, 2 / ps[1]) ~ 0.0]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 2 / v),
+    domains = [t ∈ Interval(0.0, 2 / ps[1]),
         x ∈ Interval(0.0, 1.0)]
 
     # Analytic solution
