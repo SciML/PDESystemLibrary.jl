@@ -19,6 +19,7 @@ Interpolations = "0.14"
 Markdown = "1"
 ModelingToolkit = "8.48"
 OrdinaryDiffEq = "6"
+SciMLBase = "1.88"
 
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
