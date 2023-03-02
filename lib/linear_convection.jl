@@ -1,3 +1,4 @@
+# Linear Convection Systems
 """
 # Linear Convection Equation
 
@@ -12,14 +13,13 @@ It can take any initial condition profile, as long as it is periodic.
 ```
 """
 function linear_convection(f, ps, name = :linear_convection)
-    @variables x t v u(..)
+    @variables u(..)
+    @parameters t x v
     Dt = Differential(t)
     Dx = Differential(x)
 
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
-
-    @register_symbolic f(x)
 
     bcs = [u(0, x) ~ f(x),
         u(t, 0) ~ u(t, 1)]
@@ -55,7 +55,7 @@ push!(convtri.metadata, "Triangular")
 push!(all_systems, convtri)
 
 # square wave
-f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
 convsquare = linear_convection(f, [-1.1], :convsquare)
 push!(convsquare.metadata, "Square")
@@ -80,23 +80,22 @@ Author of reference solution: Nasser M. Abbasi
 
 """
 function convection_diffusion(L, ps, name = :convection_diffusion)
-    @variables x t f(..)
-    @parameters k, v
+    @variables f(..)
+    @parameters z, t, k, v
     Dt = Differential(t)
-    Dx = Differential(x)
-    Dxx = Differential(x)^2
+    Dz = Differential(z)
+    Dzz = Differential(z)^2
 
     # 1D PDE and boundary conditions
-    eq = Dt(f(t, x)) ~ k * Dxx(f(t, x)) + v * Dx(f(t, x))
+    eq = Dt(f(t, z)) ~ k * Dzz(f(t, z)) + v * Dz(f(t, z))
 
-    f_0(x) = x == L ? 1.0 : 0.0
-    @register_symbolic f_0(x)
+    f_0(z) = IfElse.ifelse(z == L, 1.0, 0.0)
 
-    bcs = [f(0, x) ~ f_0(x),
+    bcs = [f(0, z) ~ f_0(z),
         f(t, 0) ~ 0.0, f(t, L) ~ 1.0]
     # Space and time domains
     domains = [t ∈ Interval(0.0, 30.0),
-        x ∈ Interval(0.0, L)]
+        z ∈ Interval(0.0, L)]
 
     # Analytic/reference solution
     λ(n) = (n * π / L)^2
@@ -130,7 +129,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     tags = ["1D", "Dirichlet", "Advection", "Diffusion", "Monotonic"]
 
     # PDE system
-    convdiff = PDESystem(eq, bcs, domains, [t, x], [f(t, x)],
+    convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)],
                          [k => ps[1], v => ps[2]], analytic_func = ref, metadata = tags,
                          name = name)
 

@@ -2,7 +2,10 @@ module PDESystemLibrary
 using ModelingToolkit, DomainSets
 using OrdinaryDiffEq
 using Interpolations
+using Symbolics
+using Symbolics: unwrap
 
+using IfElse
 using Markdown
 using Random
 
