@@ -6,6 +6,7 @@ using Interpolations
 import SciMLBase
 
 using IfElse
+using IfElse: ifelse
 using Markdown
 using Random
 
@@ -20,9 +21,10 @@ include("../lib/nonlinear_diffusion.jl")
 include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
 
-function get_pdesys_with_tags(tags...; f = all)
+function get_pdesys_with_tags(withtags; without = [], f = all)
     filter(all_systems) do ex
-        f(t -> t in ex.metadata, tags)
+        b = f(t -> t ∈ ex.metadata, withtags)
+        b && all(t -> t ∉ ex.metadata, withouttags)
     end
 end
 

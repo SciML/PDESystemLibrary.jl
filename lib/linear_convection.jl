@@ -62,6 +62,276 @@ push!(convsquare.metadata, "Square")
 push!(convsquare.metadata, "Discontinuous")
 push!(all_systems, convsquare)
 
+convsquare = linear_convection(f, [2.1], :convsquare2)
+push!(convsquare.metadata, "Square")
+push!(convsquare.metadata, "Discontinuous")
+push!(all_systems, convsquare)
+
+"""
+# Linear Convection Equation with Dirichlet Boundary Conditions 1
+
+1D linear convection equation with Dirichlet boundary conditions.
+
+This equation models the flow of a substance, where the substance is moving at a constant velocity.
+
+v must be positive.
+
+It can take any initial condition profile, as long as it is windowed over the domain.
+
+```math
+\\frac{\\partial u}{\\partial t} + v \\frac{\\partial u}{\\partial x} = 0
+```
+
+"""
+function linear_convection_dirichlet1(f, ps, name = :linear_convection)
+    @variables u(..)
+    @parameters t x v
+    Dt = Differential(t)
+    Dx = Differential(x)
+
+    # 1D PDE and boundary conditions
+    eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
+
+    bcs = [u(0, x) ~ f(x),
+        u(t, 0) ~ 0.0]
+    # Space and time domains
+    domains = [t ∈ Interval(0.0, 2 / v),
+        x ∈ Interval(0.0, 1.0)]
+
+    # Analytic solution
+    u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
+
+    tags = ["1D", "Dirichlet", "Linear", "Advection"]
+
+    # PDE system
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+                         analytic = u_exact, metadata = tags, name = name)
+
+    lin_conv
+end
+
+function windowlower(f, x, domain = (0.0, 1.0))
+    IfElse.ifelse(x <= domain[1], IfElse.ifelse(x > domain[2], f, 0.0), 0.0)
+end
+
+# sinusoidal input
+convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [1], :dconvsin)
+push!(convsin.metadata, "Sinusoidal")
+push!(all_systems, convsin)
+
+convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [0.5], :dconvsin2)
+push!(convsin.metadata, "Sinusoidal")
+push!(all_systems, convsin)
+
+#cosine input
+convcos = linear_convection_dirichlet1(x -> cos(2pi * x), [2], :dconvcos)
+push!(convcos.metadata, "Sinusoidal")
+push!(all_systems, convcos)
+
+# triangular input
+convtri = linear_convection_dirichlet1(x -> 1.0 - abs(x - floor(x + 0.5)), [0.6], :dconvtri)
+push!(convtri.metadata, "Triangular")
+push!(all_systems, convtri)
+
+# square wave
+f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+
+convsquare = linear_convection_dirichlet1(f, [1.1], :dconvsquare)
+push!(convsquare.metadata, "Square")
+push!(convsquare.metadata, "Discontinuous")
+push!(all_systems, convsquare)
+
+"""
+# Linear Convection Equation with Dirichlet Boundary Conditions 2
+
+1D linear convection equation with Dirichlet boundary conditions.
+
+This equation models the flow of a substance, where the substance is moving at a constant velocity.
+
+v must be positive.
+
+It can take any initial condition profile, as long as it is windowed over the domain.
+
+```math
+\\frac{\\partial u}{\\partial t} - v \\frac{\\partial u}{\\partial x} = 0
+```
+
+"""
+function linear_convection_dirichlet2(f, ps, name = :linear_convection)
+    @variables u(..)
+    @parameters t x v
+    Dt = Differential(t)
+    Dx = Differential(x)
+
+    # 1D PDE and boundary conditions
+    eq = Dt(u(t, x)) ~ v * Dx(u(t, x))
+
+    bcs = [u(0, x) ~ f(x),
+        u(t, 2 / v) ~ 0.0]
+    # Space and time domains
+    domains = [t ∈ Interval(0.0, 2 / v),
+        x ∈ Interval(0.0, 1.0)]
+
+    # Analytic solution
+    u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
+
+    tags = ["1D", "Dirichlet", "Linear", "Advection"]
+
+    # PDE system
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+                         analytic = u_exact, metadata = tags, name = name)
+
+    lin_conv
+end
+
+function windowupper(f, x, domain = (0.0, 1.0))
+    IfElse.ifelse(x < domain[1], IfElse.ifelse(x >= domain[2], f, 0.0), 0.0)
+end
+
+# sinusoidal input
+convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [1], :ddconvsin)
+push!(convsin.metadata, "Sinusoidal")
+push!(all_systems, convsin)
+
+convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [0.5], :ddconvsin2)
+push!(convsin.metadata, "Sinusoidal")
+push!(all_systems, convsin)
+
+#cosine input
+convcos = linear_convection_dirichlet1(x -> cos(2pi * x), [0.7], :ddconvcos)
+push!(convcos.metadata, "Sinusoidal")
+push!(all_systems, convcos)
+
+# triangular input
+convtri = linear_convection_dirichlet1(x -> 1.0 - abs(x - floor(x + 0.5)), [0.1],
+                                       :ddconvtri)
+push!(convtri.metadata, "Triangular")
+push!(all_systems, convtri)
+
+# square wave
+sq = f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+
+convsquare = linear_convection_dirichlet1(f, [3.1], :ddconvsquare)
+push!(convsquare.metadata, "Square")
+push!(convsquare.metadata, "Discontinuous")
+push!(all_systems, convsquare)
+
+"""
+# Linear Convection Equation with Dirichlet Boundary Conditions 3
+
+1D linear convection equation with Dirichlet boundary conditions. the left boundary is time dependent.
+
+This equation models the flow of a substance, where the substance is moving at a constant velocity.
+
+v must be positive.
+
+It can take any initial condition profile, as long as it is windowed over the domain.
+
+```math
+\\frac{\\partial u}{\\partial t} + v \\frac{\\partial u}{\\partial x} = 0
+```
+
+"""
+function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
+    @variables u(..)
+    @parameters t x v
+    Dt = Differential(t)
+    Dx = Differential(x)
+
+    # 1D PDE and boundary conditions
+    eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
+
+    bcs = [u(0, x) ~ f(x),
+        u(t, 0.0) ~ h(t)]
+    # Space and time domains
+    domains = [t ∈ Interval(0.0, 10.0),
+        x ∈ Interval(0.0, 1.0)]
+
+    # Analytic solution
+    u_exact = [u(t, x) ~ IfElse.ifelse(x > v * t, f(x - v * t), h(t - x / v))]
+
+    tags = ["1D", "Dirichlet", "Linear", "Advection"]
+
+    # PDE system
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+                         analytic = u_exact, metadata = tags, name = name)
+
+    lin_conv
+end
+
+funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
+
+for f in funcs
+    for h in funcs
+        conv = linear_convection_dirichlet3(f, h, [rand()], :funcconv)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet3(f, x -> -2 * h(x), [2 * rand()], :funcconv)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet3(x -> -10 * f(x), h, [rand()], :funcconv)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet3(x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                                            :funcconv)
+    end
+end
+
+"""
+# Linear Convection Equation with Dirichlet Boundary Conditions 4
+
+1D linear convection equation with Dirichlet boundary conditions. the left boundary is time dependent.
+
+This equation models the flow of a substance, where the substance is moving at a constant velocity.
+
+v must be positive.
+
+It can take any initial condition profile, as long as it is windowed over the domain.
+
+```math
+\\frac{\\partial u}{\\partial t} - v \\frac{\\partial u}{\\partial x} = 0
+```
+
+"""
+function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
+    @variables u(..)
+    @parameters t x v
+    Dt = Differential(t)
+    Dx = Differential(x)
+
+    # 1D PDE and boundary conditions
+    eq = Dt(u(t, x)) ~ v * Dx(u(t, x))
+
+    bcs = [u(0, x) ~ f(x),
+        u(t, 1.0) ~ h(t)]
+    # Space and time domains
+    domains = [t ∈ Interval(0.0, 10.0),
+        x ∈ Interval(0.0, 1.0)]
+
+    # Analytic solution
+    u_exact = [u(t, x) ~ IfElse.ifelse(x < v * t, f(x + v * t), h(t + x / v))]
+
+    tags = ["1D", "Dirichlet", "Linear", "Advection"]
+
+    # PDE system
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+                         analytic = u_exact, metadata = tags, name = name)
+
+    lin_conv
+end
+
+funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
+
+for f in funcs
+    for h in funcs
+        conv = linear_convection_dirichlet4(f, h, [rand()], :funcconvneg)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet4(f, x -> -2 * h(x), [2 * rand()], :funcconvneg)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet4(x -> -10 * f(x), h, [rand()], :funcconvneg)
+        push!(all_systems, conv)
+        conv = linear_convection_dirichlet4(x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                                            :funcconvneg)
+    end
+end
+
 """
 # Convection Diffusion Equation in 1D
 
@@ -126,7 +396,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
 
     ref = [f(t, z) => (ps, t, z) -> A(ps, t, z) * u(ps, t, z)]
 
-    tags = ["1D", "Dirichlet", "Advection", "Diffusion", "Monotonic"]
+    tags = ["1D", "Dirichlet", "Linear", "Advection", "Diffusion", "Monotonic"]
 
     # PDE system
     convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)],
@@ -151,3 +421,49 @@ push!(all_systems, convdiff3)
 # L = 10.0, k = 0.5, v = 3.0
 convdiff4 = convection_diffusion(10.0, [0.5, 3.0], :convdiff4)
 push!(all_systems, convdiff4)
+
+"""
+# Transport Equation in 1D
+
+1D transport equation without boundary conditions
+
+This equation models the flow of a substance, where the substance is moving at a constant velocity.
+
+it is initialized with a sinusoid, and has a sinusoidal source term.
+
+```math
+\\frac{\\partial u}{\\partial t} + v 2\\frac{\\partial u}{\\partial z} = \\sin(z)
+```
+"""
+function trans_sin()
+    @variables u(..)
+    @parameters z, t
+    Dt = Differential(t)
+    Dz = Differential(z)
+
+    # 1D PDE and boundary conditions
+    eq = Dt(u(t, z)) + 2 * Dz(u(t, z)) ~ sin(z)
+
+    u_exact(t, z) = sin(z - 2t) + 0.5 * cos(z - 2t) - 0.5 * cos(z)
+
+    bcs = [u(0, z) ~ u_exact(0, z),
+        u(t, 0) ~ u_exact(t, 0),
+        (t, 2π) ~ u_exact(t, 2π)]
+
+    # Space and time domains
+
+    domains = [t ∈ Interval(0.0, 1.0),
+        z ∈ Interval(0.0, 2π)]
+
+    # Analytic/reference solution
+    ref = [u(t, z) ~ u_exact(t, z)]
+
+    tags = ["1D", "Transport", "Linear", "Sinusoidal", "Inhomogeneous", "Advection"]
+
+    # PDESystem
+
+    @named trans_sin = PDESystem(eqs, bcs, domains, [t, z], [u(t, z)], analytic = ref,
+                                 metadata = tags)
+
+    trans_sin
+end
