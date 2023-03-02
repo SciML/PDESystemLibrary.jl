@@ -19,13 +19,13 @@ for ex in PSL.all_systems
             disc = MOLFiniteDifference(dxs)
             prob = discretize(ex, disc)
             sol = NonlinerSolve.solve(prob, NewtonRaphsom())
-            @test sol.retcode == :Success
+            @test sol.retcode == SciMLBase.ReturnCode.Success
         else
             @parameters t
             disc = MOLFiniteDifference(dxs, t)
             prob = discretize(ex, disc)
             sol = solve(prob, FBDF())
-            @test sol.retcode == :Success
+            @test sol.retcode == SciMLBase.ReturnCode.Success
         end
     end
 end

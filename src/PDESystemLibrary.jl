@@ -2,8 +2,8 @@ module PDESystemLibrary
 using ModelingToolkit, DomainSets
 using OrdinaryDiffEq
 using Interpolations
-using Symbolics
-using Symbolics: unwrap
+
+import SciMLBase
 
 using IfElse
 using Markdown
