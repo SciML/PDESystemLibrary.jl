@@ -131,7 +131,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
 
     # PDE system
     convdiff = PDESystem(eq, bcs, domains, [t, x], [f(t, x)],
-                         [k => ps[1], v => ps[2]]analytic = ref, metadata = tags,
+                         [k => ps[1], v => ps[2]], analytic_func = ref, metadata = tags,
                          name = name)
 
     convdiff
