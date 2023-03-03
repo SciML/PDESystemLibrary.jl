@@ -3,6 +3,10 @@ using ModelingToolkit, DomainSets
 using OrdinaryDiffEq
 using Interpolations
 
+import SciMLBase
+
+using IfElse
+using IfElse: ifelse
 using Markdown
 using Random
 
@@ -12,12 +16,15 @@ all_systems = []
 
 include("../lib/burgers.jl")
 include("../lib/linear_diffusion.jl")
+include("../lib/linear_convection.jl")
+include("../lib/nonlinear_diffusion.jl")
 include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
 
-function get_pdesys_with_tags(tags...)
+function get_pdesys_with_tags(withtags; without = [], f = all)
     filter(all_systems) do ex
-        all(t -> t in ex.metadata, tags)
+        b = f(t -> t ∈ ex.metadata, withtags)
+        b && all(t -> t ∉ ex.metadata, withouttags)
     end
 end
 
