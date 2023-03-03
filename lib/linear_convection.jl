@@ -260,24 +260,28 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
 end
 
 funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
-i = 0
-for f in funcs
-    for h in funcs
-        conv = linear_convection_dirichlet3(f, h, [rand()], Symbol(:funcconv, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet3(f, x -> -2 * h(x), [2 * rand()], Symbol(:funcconv, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet3(x -> -10 * f(x), h, [rand()], Symbol(:funcconv, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet3(x -> -6 * f(x), x -> -5 * h(x), [rand()],
-                                            Symbol(:funcconv, i))
-        push!(all_systems, conv)
-        i += 1
+function add_systems!(all_systems, funcs, sysconstructor, name)
+    i = 0
+    for f in funcs
+        for h in funcs
+            conv = sysconstructor(f, h, [rand()], Symbol(name, i))
+            push!(all_systems, conv)
+            i += 1
+            conv = sysconstructor(f, x -> -2 * h(x), [2 * rand()], Symbol(name, i))
+            push!(all_systems, conv)
+            i += 1
+            conv = sysconstructor(x -> -10 * f(x), h, [rand()], Symbol(name, i))
+            push!(all_systems, conv)
+            i += 1
+            conv = sysconstructor(x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                                                Symbol(name, i))
+            push!(all_systems, conv)
+            i += 1
+        end
     end
 end
+
+add_systems!(all_systems, funcs, linear_convection_dirichlet3, "funcconv")
 
 """
 # Linear Convection Equation with Dirichlet Boundary Conditions 4
@@ -322,25 +326,8 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     lin_conv
 end
 
-funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
-i = 0
-for f in funcs
-    for h in funcs
-        conv = linear_convection_dirichlet4(f, h, [rand()], Symbol(:funcconvneg, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet4(f, x -> -2 * h(x), [2 * rand()], Symbol(:funcconvneg, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet4(x -> -10 * f(x), h, [rand()], Symbol(:funcconvneg, i))
-        push!(all_systems, conv)
-        i += 1
-        conv = linear_convection_dirichlet4(x -> -6 * f(x), x -> -5 * h(x), [rand()],
-                                            Symbol(:funcconvneg, i))
-        push!(all_systems, conv)
-        i += 1
-    end
-end
+add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
+
 
 """
 # Convection Diffusion Equation in 1D
