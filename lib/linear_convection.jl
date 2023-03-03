@@ -274,7 +274,7 @@ function add_systems!(all_systems, funcs, sysconstructor, name)
             push!(all_systems, conv)
             i += 1
             conv = sysconstructor(x -> -6 * f(x), x -> -5 * h(x), [rand()],
-                                                Symbol(name, i))
+                                  Symbol(name, i))
             push!(all_systems, conv)
             i += 1
         end
@@ -327,7 +327,6 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
 end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
-
 
 """
 # Convection Diffusion Equation in 1D
