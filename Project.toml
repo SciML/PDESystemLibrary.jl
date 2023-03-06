@@ -15,6 +15,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
 DomainSets = "0.5, 0.6"
+IfElse = "0.1.0"
 Interpolations = "0.14"
 Markdown = "1"
 ModelingToolkit = "8.48"
