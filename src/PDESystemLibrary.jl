@@ -24,7 +24,7 @@ include("../lib/brusselator.jl")
 function get_pdesys_with_tags(withtags; without = [], f = all)
     filter(all_systems) do ex
         b = f(t -> t ∈ ex.metadata, withtags)
-        b && all(t -> t ∉ ex.metadata, withouttags)
+        b && all(t -> t ∉ ex.metadata, without)
     end
 end
 
