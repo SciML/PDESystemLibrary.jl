@@ -11,6 +11,6 @@ end
 
 # TODO: fix this when NeuralPDE.jl can be added to the test environment. (compat with Symbolics.jl 5)
 
-# if GROUP == "All" || GROUP == "NeuralPDE"
-#     @time @safetestset "Test against NeuralPDE.jl" begin include("neuralpde_test.jl") end
-# end
+if GROUP == "All" || GROUP == "NeuralPDE"
+    @time @safetestset "Test against NeuralPDE.jl" begin include("neuralpde_test.jl") end
+end
