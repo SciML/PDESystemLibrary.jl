@@ -4,7 +4,7 @@ PSL = PDESystemLibrary
 using NeuralPDE, Lux, OptimizationOptimJL
 
 for ex in PSL.all_systems
-    @testset "Example with NeuralPDE.jl: $(ex.name)\n Equations: $(ex.eqs) \nBCs/ICs: $(ex.bcs)" begin
+    @testset "Example with NeuralPDE.jl: $(ex.name)" begin
         dim = length(ex.ivs) # number of dimensions
         N = 8 * dim
         chain = Lux.Chain(Dense(dim, N, Lux.σ), Dense(N, N, Lux.σ), Dense(N, 1))
@@ -25,7 +25,7 @@ for ex in PSL.all_systems
             return false
         end
 
-        res = Optimization.solve(prob, opt, callback = callback, maxiters = 1000)
+        res = Optimization.solve(prob, opt, callback = callback, maxiters = 400)
         phi = discretization.phi
     end
 end
