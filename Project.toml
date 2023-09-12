@@ -11,6 +11,7 @@ Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
@@ -26,6 +27,7 @@ julia = "1.6"
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"
+NeuralPDE = "315f7962-48a3-4962-8226-d0f33b1235f0"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"

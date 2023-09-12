@@ -2,6 +2,7 @@ module PDESystemLibrary
 using ModelingToolkit, DomainSets
 using OrdinaryDiffEq
 using Interpolations
+using RuntimeGeneratedFunctions
 
 import SciMLBase
 
@@ -11,6 +12,7 @@ using Markdown
 using Random
 
 Random.seed!(100)
+RuntimeGeneratedFunctions.init(@__MODULE__)
 
 all_systems = []
 
