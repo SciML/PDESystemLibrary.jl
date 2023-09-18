@@ -138,7 +138,7 @@ function brusselator_2d()
     tags = ["2D", "Brusselator", "Periodic", "Nonlinear", "Reaction", "Diffusion"]
 
     @named bruss = PDESystem(eq, bcs, domains, [x, y, t], [u(x, y, t), v(x, y, t)],
-                             analytic_func = analytic_func, metadata = tags)
+                             analytic_func = analytic_func, metadata = tags, eval_module = @__MODULE__)
 
     bruss
 end

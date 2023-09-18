@@ -33,7 +33,7 @@ function inviscid_burgers_monotonic()
     tags = ["1D", "Monotonic", "Inviscid", "Burgers", "Advection", "Dirichlet"]
 
     @named inviscid_burgers_monotonic = PDESystem(eq, bcs, domains, [t, x], [u(t, x)];
-                                                  analytic = analytic, metadata = tags)
+                                                  analytic = analytic, metadata = tags, eval_module = @__MODULE__)
 
     inviscid_burgers_monotonic
 end
@@ -100,7 +100,7 @@ function burgers_2d()
     tags = ["2D", "Non-Monotonic", "Viscous", "Burgers", "Advection", "Dirichlet"]
 
     @named burgers_2d = PDESystem(eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)],
-                                  analytic = analytic, metadata = tags)
+                                  analytic = analytic, metadata = tags, eval_module = @__MODULE__)
 
     burgers_2d
 end
