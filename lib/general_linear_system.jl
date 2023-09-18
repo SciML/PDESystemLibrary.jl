@@ -24,7 +24,7 @@ end
 function build_with_tags(sys, tags)
     eq, ic_bc, domain, indvars, depvars, analytic, name = sys
     sys = PDESystem(eq, ic_bc, domain, indvars, depvars, name = name,
-                    analytic = analytic, metadata = tags)
+                    analytic = analytic, metadata = tags, eval_module = @__MODULE__)
     return sys
 end
 

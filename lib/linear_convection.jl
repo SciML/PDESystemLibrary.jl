@@ -179,7 +179,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 
     # PDE system
     lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-                         analytic = u_exact, metadata = tags, name = name)
+                         analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__)
 
     lin_conv
 end
@@ -254,7 +254,7 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
 
     # PDE system
     lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-                         analytic = u_exact, metadata = tags, name = name)
+                         analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__)
 
     lin_conv
 end
@@ -397,7 +397,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     # PDE system
     convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)],
                          [k => ps[1], v => ps[2]], analytic_func = ref, metadata = tags,
-                         name = name)
+                         name = name, eval_module = @__MODULE__)
 
     convdiff
 end
@@ -459,7 +459,7 @@ function trans_sin()
     # PDESystem
 
     @named trans_sin = PDESystem(eqs, bcs, domains, [t, z], [u(t, z)], analytic = ref,
-                                 metadata = tags)
+                                 metadata = tags, eval_module = @__MODULE__)
 
     trans_sin
 end
