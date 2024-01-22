@@ -12,9 +12,7 @@ for ex in PSL.all_systems
         # Discretization
         dx = 0.05
         discretization = PhysicsInformedNN(chain, GridTraining(dx))
-
-        @named pde_system = PDESystem(eq, bcs, domains, [x, y], [u(x, y)])
-        prob = discretize(pde_system, discretization)
+        prob = discretize(ex, discretization)
 
         #Optimizer
         opt = OptimizationOptimJL.BFGS()
