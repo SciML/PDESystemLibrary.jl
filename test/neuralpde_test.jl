@@ -1,7 +1,7 @@
 using PDESystemLibrary
 PSL = PDESystemLibrary
 
-using NeuralPDE, Lux, OptimizationOptimJL
+using NeuralPDE, Lux, OptimizationOptimisers
 
 for ex in PSL.all_systems
     @testset "Example with NeuralPDE.jl: $(ex.name)\n Equations: $(ex.eqs) \nBCs/ICs: $(ex.bcs)" begin
@@ -15,7 +15,7 @@ for ex in PSL.all_systems
         prob = discretize(ex, discretization)
 
         #Optimizer
-        opt = OptimizationOptimJL.BFGS()
+        opt = OptimizationOptimisers.Adam(1e-3)
 
         #Callback function
         callback = function (p, l)
@@ -23,7 +23,7 @@ for ex in PSL.all_systems
             return false
         end
 
-        res = Optimization.solve(prob, opt, callback = callback, maxiters = 1000)
+        res = Optimization.solve(prob, opt, callback = callback, maxiters = 10)
         phi = discretization.phi
     end
 end
