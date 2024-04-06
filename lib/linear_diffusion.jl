@@ -29,7 +29,7 @@ function heat_1d1()
 
     tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
 
-    @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
+    @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(D => 1.0),
                                 analytic = analytic, metadata = tags)
 
     heat_1d1

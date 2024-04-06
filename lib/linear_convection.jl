@@ -33,7 +33,7 @@ function linear_convection(f, ps, name = :linear_convection)
     tags = ["1D", "Periodic", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(v => ps[1]),
                          analytic = u_exact, metadata = tags, name = name)
 
     lin_conv
@@ -104,7 +104,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(v => ps[1]),
                          analytic = u_exact, metadata = tags, name = name)
 
     lin_conv
@@ -178,7 +178,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(v => ps[1]),
                          analytic = u_exact, metadata = tags, name = name)
 
     lin_conv
@@ -253,7 +253,7 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(v => ps[1]),
                          analytic = u_exact, metadata = tags, name = name)
 
     lin_conv
@@ -320,7 +320,7 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)]; defaults = Dict(v => ps[1]),
                          analytic = u_exact, metadata = tags, name = name)
 
     lin_conv
@@ -395,8 +395,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     tags = ["1D", "Dirichlet", "Linear", "Advection", "Diffusion", "Monotonic"]
 
     # PDE system
-    convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)],
-                         [k => ps[1], v => ps[2]], analytic_func = ref, metadata = tags,
+    convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)]; defaults = Dict(k => ps[1], v => ps[2]), analytic_func = ref, metadata = tags,
                          name = name)
 
     convdiff
