@@ -33,7 +33,7 @@ function spherical_laplacian()
 
     # PDE system
     @named sph = PDESystem(eq, bcs, domains, [t, r], [u(t, r)], analytic = u_exact,
-                           metadata = tags)
+        metadata = tags)
 
     sph
 end

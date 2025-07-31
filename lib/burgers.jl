@@ -33,7 +33,7 @@ function inviscid_burgers_monotonic()
     tags = ["1D", "Monotonic", "Inviscid", "Burgers", "Advection", "Dirichlet"]
 
     @named inviscid_burgers_monotonic = PDESystem(eq, bcs, domains, [t, x], [u(t, x)];
-                                                  analytic = analytic, metadata = tags)
+        analytic = analytic, metadata = tags)
 
     inviscid_burgers_monotonic
 end
@@ -67,20 +67,22 @@ function burgers_2d()
         v(x, y, t) ~ v_exact(x, y, t)]
 
     eq = [
-        Dt(u(x, y, t)) + u(x, y, t) * Dx(u(x, y, t)) + v(x, y, t) * Dy(u(x, y, t)) ~ (1 / R) *
-                                                                                     (Dxx(u(x,
-                                                                                            y,
-                                                                                            t)) +
-                                                                                      Dyy(u(x,
-                                                                                            y,
-                                                                                            t))),
-        Dt(v(x, y, t)) + u(x, y, t) * Dx(v(x, y, t)) + v(x, y, t) * Dy(v(x, y, t)) ~ (1 / R) *
-                                                                                     (Dxx(v(x,
-                                                                                            y,
-                                                                                            t)) +
-                                                                                      Dyy(v(x,
-                                                                                            y,
-                                                                                            t))),
+        Dt(u(x, y, t)) + u(x, y, t) * Dx(u(x, y, t)) + v(x, y, t) * Dy(u(x, y, t)) ~
+        (1 / R) *
+        (Dxx(u(x,
+            y,
+            t)) +
+         Dyy(u(x,
+            y,
+            t))),
+        Dt(v(x, y, t)) + u(x, y, t) * Dx(v(x, y, t)) + v(x, y, t) * Dy(v(x, y, t)) ~
+        (1 / R) *
+        (Dxx(v(x,
+            y,
+            t)) +
+         Dyy(v(x,
+            y,
+            t)))
     ]
 
     domains = [x ∈ Interval(x_min, x_max),
@@ -100,7 +102,7 @@ function burgers_2d()
     tags = ["2D", "Non-Monotonic", "Viscous", "Burgers", "Advection", "Dirichlet"]
 
     @named burgers_2d = PDESystem(eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)],
-                                  analytic = analytic, metadata = tags)
+        analytic = analytic, metadata = tags)
 
     burgers_2d
 end
