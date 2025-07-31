@@ -30,7 +30,7 @@ function heat_1d1()
     tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
 
     @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
-                                analytic = analytic, metadata = tags)
+        analytic = analytic, metadata = tags)
 
     heat_1d1
 end
@@ -74,6 +74,6 @@ function heat_1d_neumann()
     tags = ["1D", "Neumann", "Linear", "Diffusion", "Heat"]
     # PDE system
     @named pdesys = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], analytic = analytic,
-                              metadata = tags)
+        metadata = tags)
 end
 push!(all_systems, heat_1d_neumann())

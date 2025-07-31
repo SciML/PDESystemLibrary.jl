@@ -56,8 +56,9 @@ function brusselator_2d()
     v0(x, y, t) = 27(x * (1 - x))^(3 / 2)
 
     eq = [
-        Dt(u(x, y, t)) ~ 1.0 + v(x, y, t) * u(x, y, t)^2 - 4.4 * u(x, y, t) +
-                         α * ∇²(u(x, y, t)) + brusselator_f(x, y, t),
+        Dt(u(x, y, t)) ~
+        1.0 + v(x, y, t) * u(x, y, t)^2 - 4.4 * u(x, y, t) +
+        α * ∇²(u(x, y, t)) + brusselator_f(x, y, t),
         Dt(v(x, y, t)) ~ 3.4 * u(x, y, t) - v(x, y, t) * u(x, y, t)^2 + α * ∇²(v(x, y, t))]
 
     domains = [x ∈ Interval(x_min, x_max),
@@ -81,8 +82,9 @@ function brusselator_2d()
         @inbounds for I in CartesianIndices((N, N))
             i, j = Tuple(I)
             xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
-            ip1, im1, jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-                                 limit(j - 1, N)
+            ip1, im1,
+            jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
+            limit(j - 1, N)
             du[i, j, 1] = alpha *
                           (ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
                            4ud[i, j, 1]) +
@@ -138,7 +140,7 @@ function brusselator_2d()
     tags = ["2D", "Brusselator", "Periodic", "Nonlinear", "Reaction", "Diffusion"]
 
     @named bruss = PDESystem(eq, bcs, domains, [x, y, t], [u(x, y, t), v(x, y, t)],
-                             analytic_func = analytic_func, metadata = tags)
+        analytic_func = analytic_func, metadata = tags)
 
     bruss
 end
