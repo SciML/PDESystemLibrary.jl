@@ -1,7 +1,7 @@
 name = "PDESystemLibrary"
 uuid = "d14f9848-fe58-4297-bd22-c1aba6f3000d"
 authors = ["Alex Jones (xtalax) <alex.jones@xisoft.co.uk> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
