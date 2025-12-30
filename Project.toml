@@ -14,14 +14,14 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
-DomainSets = "0.5, 0.6"
-IfElse = "0.1.0"
-Interpolations = "0.14"
+DomainSets = "0.5, 0.6, 0.7"
+IfElse = "0.1"
+Interpolations = "0.14, 0.15, 0.16"
 Markdown = "1"
-ModelingToolkit = "8.48"
+ModelingToolkit = "9, 10, 11"
 OrdinaryDiffEq = "6"
-SciMLBase = "1.88"
-julia = "1.6"
+SciMLBase = "2"
+julia = "1.10"
 
 [extras]
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"

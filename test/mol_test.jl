@@ -2,6 +2,7 @@ using PDESystemLibrary
 PSL = PDESystemLibrary
 
 using ModelingToolkit, MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve, Test
+using DomainSets: supremum, infimum
 
 N = 100
 
