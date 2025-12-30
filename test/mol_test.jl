@@ -2,6 +2,7 @@ using PDESystemLibrary
 PSL = PDESystemLibrary
 
 using ModelingToolkit, MethodOfLines, DomainSets, OrdinaryDiffEq, NonlinearSolve, Test
+using DomainSets: supremum, infimum
 
 N = 100
 
@@ -18,7 +19,7 @@ for ex in PSL.all_systems
         elseif length(ivs) == length(ex.ivs)
             disc = MOLFiniteDifference(dxs)
             prob = discretize(ex, disc)
-            sol = NonlinerSolve.solve(prob, NewtonRaphsom())
+            sol = NonlinearSolve.solve(prob, NewtonRaphson())
             @test sol.retcode == SciMLBase.ReturnCode.Success
         else
             @parameters t
