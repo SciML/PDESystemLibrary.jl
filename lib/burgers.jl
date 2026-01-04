@@ -21,21 +21,27 @@ function inviscid_burgers_monotonic()
 
     eq = Dt(u(t, x)) ~ -u(t, x) * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ x,
+    bcs = [
+        u(0, x) ~ x,
         u(t, x_min) ~ analytic_u(t, x_min),
-        u(t, x_max) ~ analytic_u(t, x_max)]
+        u(t, x_max) ~ analytic_u(t, x_max),
+    ]
 
-    domains = [t ∈ Interval(t_min, t_max),
-        x ∈ Interval(x_min, x_max)]
+    domains = [
+        t ∈ Interval(t_min, t_max),
+        x ∈ Interval(x_min, x_max),
+    ]
 
     dx = 0.05
 
     tags = ["1D", "Monotonic", "Inviscid", "Burgers", "Advection", "Dirichlet"]
 
-    @named inviscid_burgers_monotonic = PDESystem(eq, bcs, domains, [t, x], [u(t, x)];
-        analytic = analytic, metadata = tags)
+    @named inviscid_burgers_monotonic = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)];
+        analytic = analytic, metadata = tags
+    )
 
-    inviscid_burgers_monotonic
+    return inviscid_burgers_monotonic
 end
 
 """
@@ -63,33 +69,58 @@ function burgers_2d()
 
     u_exact(x, y, t) = 3 / 4 - 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
     v_exact(x, y, t) = 3 / 4 + 1 / (4 * (1 + exp(R * (-t - 4x + 4y) / 32)))
-    analytic = [u(x, y, t) ~ u_exact(x, y, t),
-        v(x, y, t) ~ v_exact(x, y, t)]
+    analytic = [
+        u(x, y, t) ~ u_exact(x, y, t),
+        v(x, y, t) ~ v_exact(x, y, t),
+    ]
 
     eq = [
         Dt(u(x, y, t)) + u(x, y, t) * Dx(u(x, y, t)) + v(x, y, t) * Dy(u(x, y, t)) ~
-        (1 / R) *
-        (Dxx(u(x,
-            y,
-            t)) +
-         Dyy(u(x,
-            y,
-            t))),
+            (1 / R) *
+            (
+            Dxx(
+                u(
+                    x,
+                    y,
+                    t
+                )
+            ) +
+                Dyy(
+                u(
+                    x,
+                    y,
+                    t
+                )
+            )
+        ),
         Dt(v(x, y, t)) + u(x, y, t) * Dx(v(x, y, t)) + v(x, y, t) * Dy(v(x, y, t)) ~
-        (1 / R) *
-        (Dxx(v(x,
-            y,
-            t)) +
-         Dyy(v(x,
-            y,
-            t)))
+            (1 / R) *
+            (
+            Dxx(
+                v(
+                    x,
+                    y,
+                    t
+                )
+            ) +
+                Dyy(
+                v(
+                    x,
+                    y,
+                    t
+                )
+            )
+        ),
     ]
 
-    domains = [x ∈ Interval(x_min, x_max),
+    domains = [
+        x ∈ Interval(x_min, x_max),
         y ∈ Interval(y_min, y_max),
-        t ∈ Interval(t_min, t_max)]
+        t ∈ Interval(t_min, t_max),
+    ]
 
-    bcs = [u(x, y, 0) ~ u_exact(x, y, 0),
+    bcs = [
+        u(x, y, 0) ~ u_exact(x, y, 0),
         u(0, y, t) ~ u_exact(0, y, t),
         u(x, 0, t) ~ u_exact(x, 0, t),
         u(1, y, t) ~ u_exact(1, y, t),
@@ -97,14 +128,17 @@ function burgers_2d()
         v(0, y, t) ~ v_exact(0, y, t),
         v(x, 0, t) ~ v_exact(x, 0, t),
         v(1, y, t) ~ v_exact(1, y, t),
-        v(x, 1, t) ~ v_exact(x, 1, t)]
+        v(x, 1, t) ~ v_exact(x, 1, t),
+    ]
 
     tags = ["2D", "Non-Monotonic", "Viscous", "Burgers", "Advection", "Dirichlet"]
 
-    @named burgers_2d = PDESystem(eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)],
-        analytic = analytic, metadata = tags)
+    @named burgers_2d = PDESystem(
+        eq, bcs, domains, [t, x, y], [u(x, y, t), v(x, y, t)],
+        analytic = analytic, metadata = tags
+    )
 
-    burgers_2d
+    return burgers_2d
 end
 
 all_systems = vcat(all_systems, [inviscid_burgers_monotonic(), burgers_2d()])
