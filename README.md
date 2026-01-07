@@ -67,3 +67,4 @@ If this is discretized, you will need to interpolate it. See `lib/brusselator.jl
 
 Reference functions should be provided as a vector of pairs from the symbolic form to their reference function.
 
+
