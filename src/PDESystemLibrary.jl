@@ -22,7 +22,7 @@ include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
 
 function get_pdesys_with_tags(withtags; without = [], f = all)
-    filter(all_systems) do ex
+    return filter(all_systems) do ex
         b = f(t -> t ∈ ex.metadata, withtags)
         b && all(t -> t ∉ ex.metadata, without)
     end

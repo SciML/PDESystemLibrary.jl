@@ -19,20 +19,26 @@ function heat_1d1()
     Dt = Differential(t)
 
     eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
-    bcs = [u(0, x) ~ sin(2pi * x),
-        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
+    bcs = [
+        u(0, x) ~ sin(2pi * x),
+        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0,
+    ]
 
-    domains = [t ∈ Interval(0.0, 1.0),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 1.0),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
 
     tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
 
-    @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
-        analytic = analytic, metadata = tags)
+    @named heat_1d1 = PDESystem(
+        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
+        analytic = analytic, metadata = tags
+    )
 
-    heat_1d1
+    return heat_1d1
 end
 push!(all_systems, heat_1d1())
 
@@ -61,19 +67,25 @@ function heat_1d_neumann()
 
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ Dxx(u(t, x))
-    bcs = [u(0, x) ~ cos(x),
+    bcs = [
+        u(0, x) ~ cos(x),
         Dx(u(t, 0)) ~ 0,
-        Dx(u(t, Float64(pi))) ~ 0]
+        Dx(u(t, Float64(pi))) ~ 0,
+    ]
 
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 1.0),
-        x ∈ Interval(0.0, Float64(pi))]
+    domains = [
+        t ∈ Interval(0.0, 1.0),
+        x ∈ Interval(0.0, Float64(pi)),
+    ]
 
     analytic = [u(t, x) ~ exp(-t) * cos(x)]
 
     tags = ["1D", "Neumann", "Linear", "Diffusion", "Heat"]
     # PDE system
-    @named pdesys = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], analytic = analytic,
-        metadata = tags)
+    return @named pdesys = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], analytic = analytic,
+        metadata = tags
+    )
 end
 push!(all_systems, heat_1d_neumann())

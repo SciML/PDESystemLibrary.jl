@@ -21,11 +21,15 @@ function linear_convection(f, ps, name = :linear_convection)
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ f(x),
-        u(t, 0) ~ u(t, 1)]
+    bcs = [
+        u(0, x) ~ f(x),
+        u(t, 0) ~ u(t, 1),
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 10.0),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 10.0),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     # Analytic solution
     u_exact = [u(t, x) ~ f(x - v * t)]
@@ -33,10 +37,12 @@ function linear_convection(f, ps, name = :linear_convection)
     tags = ["1D", "Periodic", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name)
+    lin_conv = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+        analytic = u_exact, metadata = tags, name = name
+    )
 
-    lin_conv
+    return lin_conv
 end
 
 # sinusoidal input
@@ -92,11 +98,15 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ f(x),
-        u(t, 0) ~ 0.0]
+    bcs = [
+        u(0, x) ~ f(x),
+        u(t, 0) ~ 0.0,
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 2 / ps[1]),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 2 / ps[1]),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     # Analytic solution
     u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
@@ -104,14 +114,16 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name)
+    lin_conv = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+        analytic = u_exact, metadata = tags, name = name
+    )
 
-    lin_conv
+    return lin_conv
 end
 
 function windowlower(f, x, domain = (0.0, 1.0))
-    IfElse.ifelse(x <= domain[1], IfElse.ifelse(x > domain[2], f, 0.0), 0.0)
+    return IfElse.ifelse(x <= domain[1], IfElse.ifelse(x > domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -166,11 +178,15 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ v * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ f(x),
-        u(t, 2 / ps[1]) ~ 0.0]
+    bcs = [
+        u(0, x) ~ f(x),
+        u(t, 2 / ps[1]) ~ 0.0,
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 2 / ps[1]),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 2 / ps[1]),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     # Analytic solution
     u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
@@ -178,14 +194,16 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name)
+    lin_conv = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+        analytic = u_exact, metadata = tags, name = name
+    )
 
-    lin_conv
+    return lin_conv
 end
 
 function windowupper(f, x, domain = (0.0, 1.0))
-    IfElse.ifelse(x < domain[1], IfElse.ifelse(x >= domain[2], f, 0.0), 0.0)
+    return IfElse.ifelse(x < domain[1], IfElse.ifelse(x >= domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -203,8 +221,10 @@ push!(convcos.metadata, "Sinusoidal")
 push!(all_systems, convcos)
 
 # triangular input
-convtri = linear_convection_dirichlet1(x -> 1.0 - abs(x - floor(x + 0.5)), [0.1],
-    :ddconvtri)
+convtri = linear_convection_dirichlet1(
+    x -> 1.0 - abs(x - floor(x + 0.5)), [0.1],
+    :ddconvtri
+)
 push!(convtri.metadata, "Triangular")
 push!(all_systems, convtri)
 
@@ -241,11 +261,15 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ -v * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ f(x),
-        u(t, 0.0) ~ h(t)]
+    bcs = [
+        u(0, x) ~ f(x),
+        u(t, 0.0) ~ h(t),
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 10.0),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 10.0),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     # Analytic solution
     u_exact = [u(t, x) ~ IfElse.ifelse(x > v * t, f(x - v * t), h(t - x / v))]
@@ -253,10 +277,12 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name)
+    lin_conv = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+        analytic = u_exact, metadata = tags, name = name
+    )
 
-    lin_conv
+    return lin_conv
 end
 
 funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
@@ -273,12 +299,15 @@ function add_systems!(all_systems, funcs, sysconstructor, name)
             conv = sysconstructor(x -> -10 * f(x), h, [rand()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
-            conv = sysconstructor(x -> -6 * f(x), x -> -5 * h(x), [rand()],
-                Symbol(name, i))
+            conv = sysconstructor(
+                x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                Symbol(name, i)
+            )
             push!(all_systems, conv)
             i += 1
         end
     end
+    return
 end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet3, "funcconv")
@@ -308,11 +337,15 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     # 1D PDE and boundary conditions
     eq = Dt(u(t, x)) ~ v * Dx(u(t, x))
 
-    bcs = [u(0, x) ~ f(x),
-        u(t, 1.0) ~ h(t)]
+    bcs = [
+        u(0, x) ~ f(x),
+        u(t, 1.0) ~ h(t),
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 10.0),
-        x ∈ Interval(0.0, 1.0)]
+    domains = [
+        t ∈ Interval(0.0, 10.0),
+        x ∈ Interval(0.0, 1.0),
+    ]
 
     # Analytic solution
     u_exact = [u(t, x) ~ IfElse.ifelse(x < v * t, f(x + v * t), h(t + x / v))]
@@ -320,10 +353,12 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
     # PDE system
-    lin_conv = PDESystem(eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name)
+    lin_conv = PDESystem(
+        eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
+        analytic = u_exact, metadata = tags, name = name
+    )
 
-    lin_conv
+    return lin_conv
 end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
@@ -357,11 +392,15 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
 
     f_0(z) = IfElse.ifelse(z == L, 1.0, 0.0)
 
-    bcs = [f(0, z) ~ f_0(z),
-        f(t, 0) ~ 0.0, f(t, L) ~ 1.0]
+    bcs = [
+        f(0, z) ~ f_0(z),
+        f(t, 0) ~ 0.0, f(t, L) ~ 1.0,
+    ]
     # Space and time domains
-    domains = [t ∈ Interval(0.0, 30.0),
-        z ∈ Interval(0.0, L)]
+    domains = [
+        t ∈ Interval(0.0, 30.0),
+        z ∈ Interval(0.0, L),
+    ]
 
     # Analytic/reference solution
     λ(n) = (n * π / L)^2
@@ -371,7 +410,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     function A(ps, t, z)
         k = ps[1]
         v = ps[2]
-        exp(-((t * v^2) / (4k) + (v * z) / (2k)))
+        return exp(-((t * v^2) / (4k) + (v * z) / (2k)))
     end
 
     function u(ps, t, z)
@@ -379,15 +418,17 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         v = ps[2]
         a = z / L * exp((t * v^2) / (4k) + (v * L) / (2k))
         s = mapreduce((+), 1:maxiters) do n
-            acu = (2 * (-1)^n * v^2 * exp(-k * λ(n) * t + (v * L) / (2k)) *
-                   (exp(k * λ(n) * t + (t * v^2) / (4k)) - 1)) /
-                  (n * π * (4 * k^2 * λ(n) + v^2))
+            acu = (
+                2 * (-1)^n * v^2 * exp(-k * λ(n) * t + (v * L) / (2k)) *
+                    (exp(k * λ(n) * t + (t * v^2) / (4k)) - 1)
+            ) /
+                (n * π * (4 * k^2 * λ(n) + v^2))
             acu += 2 / L * ((-1)^n) * exp(v * L / (2k)) * exp(-k * λ(n) * t) / sqrt(λ(n))
             acu *= sin(λ(n) * z)
 
             acu
         end
-        a + s
+        return a + s
     end
 
     ref = [f(t, z) => (ps, t, z) -> A(ps, t, z) * u(ps, t, z)]
@@ -395,11 +436,13 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     tags = ["1D", "Dirichlet", "Linear", "Advection", "Diffusion", "Monotonic"]
 
     # PDE system
-    convdiff = PDESystem(eq, bcs, domains, [t, z], [f(t, z)],
+    convdiff = PDESystem(
+        eq, bcs, domains, [t, z], [f(t, z)],
         [k => ps[1], v => ps[2]], analytic_func = ref, metadata = tags,
-        name = name)
+        name = name
+    )
 
-    convdiff
+    return convdiff
 end
 
 # L = 1.0, k = 0.01, v = 1.0
@@ -442,14 +485,18 @@ function trans_sin()
 
     u_exact(t, z) = sin(z - 2t) + 0.5 * cos(z - 2t) - 0.5 * cos(z)
 
-    bcs = [u(0, z) ~ u_exact(0, z),
+    bcs = [
+        u(0, z) ~ u_exact(0, z),
         u(t, 0) ~ u_exact(t, 0),
-        (t, 2π) ~ u_exact(t, 2π)]
+        (t, 2π) ~ u_exact(t, 2π),
+    ]
 
     # Space and time domains
 
-    domains = [t ∈ Interval(0.0, 1.0),
-        z ∈ Interval(0.0, 2π)]
+    domains = [
+        t ∈ Interval(0.0, 1.0),
+        z ∈ Interval(0.0, 2π),
+    ]
 
     # Analytic/reference solution
     ref = [u(t, z) ~ u_exact(t, z)]
@@ -458,8 +505,10 @@ function trans_sin()
 
     # PDESystem
 
-    @named trans_sin = PDESystem(eqs, bcs, domains, [t, z], [u(t, z)], analytic = ref,
-        metadata = tags)
+    @named trans_sin = PDESystem(
+        eqs, bcs, domains, [t, z], [u(t, z)], analytic = ref,
+        metadata = tags
+    )
 
-    trans_sin
+    return trans_sin
 end

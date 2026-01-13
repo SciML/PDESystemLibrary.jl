@@ -57,19 +57,24 @@ function brusselator_2d()
 
     eq = [
         Dt(u(x, y, t)) ~
-        1.0 + v(x, y, t) * u(x, y, t)^2 - 4.4 * u(x, y, t) +
-        α * ∇²(u(x, y, t)) + brusselator_f(x, y, t),
-        Dt(v(x, y, t)) ~ 3.4 * u(x, y, t) - v(x, y, t) * u(x, y, t)^2 + α * ∇²(v(x, y, t))]
+            1.0 + v(x, y, t) * u(x, y, t)^2 - 4.4 * u(x, y, t) +
+            α * ∇²(u(x, y, t)) + brusselator_f(x, y, t),
+        Dt(v(x, y, t)) ~ 3.4 * u(x, y, t) - v(x, y, t) * u(x, y, t)^2 + α * ∇²(v(x, y, t)),
+    ]
 
-    domains = [x ∈ Interval(x_min, x_max),
+    domains = [
+        x ∈ Interval(x_min, x_max),
         y ∈ Interval(y_min, y_max),
-        t ∈ Interval(t_min, t_max)]
+        t ∈ Interval(t_min, t_max),
+    ]
 
-    bcs = [u(x, y, 0) ~ u0(x, y, 0),
+    bcs = [
+        u(x, y, 0) ~ u0(x, y, 0),
         u(0, y, t) ~ u(1, y, t),
         u(x, 0, t) ~ u(x, 1, t), v(x, y, 0) ~ v0(x, y, 0),
         v(0, y, t) ~ v(1, y, t),
-        v(x, 0, t) ~ v(x, 1, t)]
+        v(x, 0, t) ~ v(x, 1, t),
+    ]
 
     # Solve reference problem
     N = 32
@@ -79,21 +84,25 @@ function brusselator_2d()
     function brusselator_2d_loop(du, ud, p, td)
         A, B, alpha, dx = p
         alpha = alpha / dx^2
-        @inbounds for I in CartesianIndices((N, N))
+        return @inbounds for I in CartesianIndices((N, N))
             i, j = Tuple(I)
             xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
             ip1, im1,
-            jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-            limit(j - 1, N)
+                jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
+                limit(j - 1, N)
             du[i, j, 1] = alpha *
-                          (ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
-                           4ud[i, j, 1]) +
-                          B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
-                          brusselator_f(xd, yd, td)
+                (
+                ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
+                    4ud[i, j, 1]
+            ) +
+                B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
+                brusselator_f(xd, yd, td)
             du[i, j, 2] = alpha *
-                          (ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
-                           4ud[i, j, 2]) +
-                          A * ud[i, j, 1] - ud[i, j, 1]^2 * ud[i, j, 2]
+                (
+                ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
+                    4ud[i, j, 2]
+            ) +
+                A * ud[i, j, 1] - ud[i, j, 1]^2 * ud[i, j, 2]
         end
     end
     p = (3.4, 1.0, 10.0, step(xyd_brusselator))
@@ -107,7 +116,7 @@ function brusselator_2d()
             ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
             ud[I, 2] = 27 * (xd * (1 - xd))^(3 / 2)
         end
-        ud
+        return ud
     end
     u0_manual = init_brusselator_2d(xyd_brusselator)
     prob = ODEProblem(brusselator_2d_loop, u0_manual, (0.0, 11.5), p)
@@ -139,10 +148,12 @@ function brusselator_2d()
 
     tags = ["2D", "Brusselator", "Periodic", "Nonlinear", "Reaction", "Diffusion"]
 
-    @named bruss = PDESystem(eq, bcs, domains, [x, y, t], [u(x, y, t), v(x, y, t)],
-        analytic_func = analytic_func, metadata = tags)
+    @named bruss = PDESystem(
+        eq, bcs, domains, [x, y, t], [u(x, y, t), v(x, y, t)],
+        analytic_func = analytic_func, metadata = tags
+    )
 
-    bruss
+    return bruss
 end
 
 push!(all_systems, brusselator_2d())

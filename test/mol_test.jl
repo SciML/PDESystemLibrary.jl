@@ -12,7 +12,7 @@ for ex in PSL.all_systems
         dxs = map(ivs) do x
             xdomain = ex.domain[findfirst(d -> isequal(x, d.variables), ex.domain)]
             x => (supremum(xdomain.domain) - infimum(xdomain.domain)) /
-                 (floor(N^(1 / length(ivs))) - 1)
+                (floor(N^(1 / length(ivs))) - 1)
         end
         if length(ivs) == 0
             continue
