@@ -14,12 +14,12 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
-DomainSets = "0.5, 0.6, 0.7"
+DomainSets = "0.5, 0.6, 0.7, 0.8"
 IfElse = "0.1"
 Interpolations = "0.14, 0.15, 0.16"
 Markdown = "1"
 ModelingToolkit = "9, 10, 11"
-OrdinaryDiffEq = "6"
+OrdinaryDiffEq = "6, 7.0"
 SciMLBase = "2, 3.1"
 julia = "1.10"
 
