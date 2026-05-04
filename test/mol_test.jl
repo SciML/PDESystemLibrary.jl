@@ -28,20 +28,32 @@ for ex in PSL.all_systems
         elseif length(ivs) == length(ex.ivs)
             disc = MOLFiniteDifference(dxs)
             prob = discretize(ex, disc)
-            sol = NonlinearSolve.solve(prob, NewtonRaphson())
             if ex.name in BROKEN_EXAMPLES
-                @test_broken sol.retcode == SciMLBase.ReturnCode.Success
+                # solve itself may throw on numerically-unstable examples;
+                # wrap in try/catch so @test_broken sees a `false` instead of
+                # an Error when that happens.
+                @test_broken try
+                    NonlinearSolve.solve(prob, NewtonRaphson()).retcode ==
+                        SciMLBase.ReturnCode.Success
+                catch
+                    false
+                end
             else
+                sol = NonlinearSolve.solve(prob, NewtonRaphson())
                 @test sol.retcode == SciMLBase.ReturnCode.Success
             end
         else
             @parameters t
             disc = MOLFiniteDifference(dxs, t)
             prob = discretize(ex, disc)
-            sol = solve(prob, FBDF())
             if ex.name in BROKEN_EXAMPLES
-                @test_broken sol.retcode == SciMLBase.ReturnCode.Success
+                @test_broken try
+                    solve(prob, FBDF()).retcode == SciMLBase.ReturnCode.Success
+                catch
+                    false
+                end
             else
+                sol = solve(prob, FBDF())
                 @test sol.retcode == SciMLBase.ReturnCode.Success
             end
         end
