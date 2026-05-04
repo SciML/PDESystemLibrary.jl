@@ -13,7 +13,7 @@ N = 100
 # poorly. These are tracked as broken so the test suite remains green; fixing
 # them requires either an upwind/finite-volume discretization or an explicit
 # solver such as `Vern9()`.
-const BROKEN_EXAMPLES = Set([:adv3, :advdiff3])
+const BROKEN_EXAMPLES = Set([:adv3])
 
 for ex in PSL.all_systems
     @testset "Example: $(ex.name)" begin
