@@ -1,6 +1,7 @@
 module PDESystemLibrary
 using ModelingToolkit, DomainSets
 using OrdinaryDiffEq
+using OrdinaryDiffEqSDIRK
 using Interpolations
 
 import SciMLBase
