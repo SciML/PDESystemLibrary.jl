@@ -1,0 +1,29 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+jobs:
+  test:
+    name: "Tests"
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - MOL
+          - NeuralPDE
+        version:
+          - 'lts'
+          - '1'
+          - 'pre'
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "${{ matrix.version }}"
+      group: "${{ matrix.group }}"
+    secrets: "inherit"
