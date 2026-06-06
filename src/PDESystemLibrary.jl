@@ -6,8 +6,6 @@ using Interpolations
 
 import SciMLBase
 
-using IfElse
-using IfElse: ifelse
 using Markdown
 using Random
 
