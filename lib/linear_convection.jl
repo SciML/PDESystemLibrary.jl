@@ -61,7 +61,7 @@ push!(convtri.metadata, "Triangular")
 push!(all_systems, convtri)
 
 # square wave
-f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
 convsquare = linear_convection(f, [-1.1], :convsquare)
 push!(convsquare.metadata, "Square")
@@ -123,7 +123,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
 end
 
 function windowlower(f, x, domain = (0.0, 1.0))
-    return IfElse.ifelse(x <= domain[1], IfElse.ifelse(x > domain[2], f, 0.0), 0.0)
+    return ifelse(x <= domain[1], ifelse(x > domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -146,7 +146,7 @@ push!(convtri.metadata, "Triangular")
 push!(all_systems, convtri)
 
 # square wave
-f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
 convsquare = linear_convection_dirichlet1(f, [1.1], :dconvsquare)
 push!(convsquare.metadata, "Square")
@@ -203,7 +203,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 end
 
 function windowupper(f, x, domain = (0.0, 1.0))
-    return IfElse.ifelse(x < domain[1], IfElse.ifelse(x >= domain[2], f, 0.0), 0.0)
+    return ifelse(x < domain[1], ifelse(x >= domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -229,7 +229,7 @@ push!(convtri.metadata, "Triangular")
 push!(all_systems, convtri)
 
 # square wave
-sq = f = (x) -> IfElse.ifelse(x - floor(x) < 0.5, 1.0, -1.0)
+sq = f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
 convsquare = linear_convection_dirichlet1(f, [3.1], :ddconvsquare)
 push!(convsquare.metadata, "Square")
@@ -272,7 +272,7 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
     ]
 
     # Analytic solution
-    u_exact = [u(t, x) ~ IfElse.ifelse(x > v * t, f(x - v * t), h(t - x / v))]
+    u_exact = [u(t, x) ~ ifelse(x > v * t, f(x - v * t), h(t - x / v))]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
@@ -348,7 +348,7 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     ]
 
     # Analytic solution
-    u_exact = [u(t, x) ~ IfElse.ifelse(x < v * t, f(x + v * t), h(t + x / v))]
+    u_exact = [u(t, x) ~ ifelse(x < v * t, f(x + v * t), h(t + x / v))]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
@@ -390,7 +390,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     # 1D PDE and boundary conditions
     eq = Dt(f(t, z)) ~ k * Dzz(f(t, z)) + v * Dz(f(t, z))
 
-    f_0(z) = IfElse.ifelse(z == L, 1.0, 0.0)
+    f_0(z) = ifelse(z == L, 1.0, 0.0)
 
     bcs = [
         f(0, z) ~ f_0(z),
