@@ -16,11 +16,17 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 [compat]
 DomainSets = "0.6, 0.7"
 Interpolations = "0.14, 0.15, 0.16"
+Lux = "1"
 Markdown = "1"
+MethodOfLines = "0.11, 0.12"
 ModelingToolkit = "9.7.1, 10, 11"
+NonlinearSolve = "3, 4"
+OptimizationOptimJL = "0.3, 0.4"
 OrdinaryDiffEq = "6.80.0, 7"
 OrdinaryDiffEqSDIRK = "1.2.0, 2"
+SafeTestsets = "0.1"
 SciMLBase = "2.69.0, 3.1"
+Test = "1"
 julia = "1.10"
 
 [extras]
