@@ -1,4 +1,6 @@
 # The test is simply that all of the examples build!
+using SafeTestsets
+
 const GROUP = get(ENV, "GROUP", "All")
 
 if GROUP == "QA"
@@ -8,8 +10,6 @@ if GROUP == "QA"
     Pkg.instantiate()
     include("qa.jl")
 else
-    using SafeTestsets
-
     if GROUP == "All" || GROUP == "Core"
         @time @safetestset "Test against MethodOfLines.jl" begin
             include("mol_test.jl")
