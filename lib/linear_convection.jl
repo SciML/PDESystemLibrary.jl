@@ -488,7 +488,7 @@ function trans_sin()
     bcs = [
         u(0, z) ~ u_exact(0, z),
         u(t, 0) ~ u_exact(t, 0),
-        (t, 2π) ~ u_exact(t, 2π),
+        u(t, 2π) ~ u_exact(t, 2π),
     ]
 
     # Space and time domains
@@ -506,7 +506,7 @@ function trans_sin()
     # PDESystem
 
     @named trans_sin = PDESystem(
-        eqs, bcs, domains, [t, z], [u(t, z)], analytic = ref,
+        eq, bcs, domains, [t, z], [u(t, z)], analytic = ref,
         metadata = tags
     )
 
