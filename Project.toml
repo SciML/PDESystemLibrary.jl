@@ -23,6 +23,7 @@ ModelingToolkit = "9.7.1, 10, 11.27"
 NonlinearSolve = "4.12"
 OptimizationOptimJL = "0.3, 0.4"
 OrdinaryDiffEq = "6.80.0, 7"
+OrdinaryDiffEqCore = "4.4"
 OrdinaryDiffEqSDIRK = "1.7, 2"
 Random = "1"
 SafeTestsets = "0.1"
@@ -36,9 +37,10 @@ Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MethodOfLines = "94925ecb-adb7-4558-8ed8-f975c56a0bf4"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
+OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "MethodOfLines", "Lux", "NonlinearSolve", "OptimizationOptimJL", "SafeTestsets", "SciMLTesting"]
+test = ["Test", "MethodOfLines", "Lux", "NonlinearSolve", "OptimizationOptimJL", "OrdinaryDiffEqCore", "SafeTestsets", "SciMLTesting"]
