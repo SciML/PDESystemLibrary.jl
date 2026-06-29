@@ -14,7 +14,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
-DomainSets = "0.6, 0.7"
+DomainSets = "0.6, 0.7, 0.8"
 Interpolations = "0.14, 0.15, 0.16"
 Lux = "1"
 Markdown = "1"
