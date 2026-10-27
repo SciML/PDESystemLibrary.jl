@@ -34,7 +34,7 @@ function heat_1d1()
     tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
 
     @named heat_1d1 = PDESystem(
-        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
+        eqs, bcs, domains, [t, x], [u(t, x)], [D => 0.01],
         analytic = analytic, metadata = tags, eval_module = @__MODULE__
     )
 
