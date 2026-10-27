@@ -376,6 +376,8 @@ It is initialized with a zero profile, and the boundary conditions are set to 1 
 \\frac{\\partial u}{\\partial t} = \\kappa \\frac{\\partial^2 u}{\\partial z^2} + v \\frac{\\partial u}{\\partial z} +
 ```
 
+The analytic solution sums at most 50000 sine-series terms and throws an `ArgumentError` naming the minimum supported `t` when more would be needed (about `t ≥ 1.6e-7` for `convdiff1` and `1.6e-5` for `convdiff3`).
+
 Reference Solution found here: https://www.12000.org/my_notes/diffusion_convection_PDE/diffusion_convection_PDE.htm
 Author of reference solution: Nasser M. Abbasi
 
@@ -418,8 +420,15 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     function transient(k, γ, t, z)
         T = typeof(γ)
         Lₜ = T(L)
-        nterms = ceil(Int, L / π * sqrt((40 + max(γ * (Lₜ - z), 0)) / (k * t)))
-        return sum(1:min(nterms, maxiters)) do n
+        nterms = L / π * sqrt((40 + max(γ * (Lₜ - z), 0)) / (k * t))
+        nterms <= maxiters || throw(
+            ArgumentError(
+                "convection_diffusion analytic solution needs ≈$(round(Float64(nterms))) series terms at " *
+                    "t = $(Float64(t)), z = $(Float64(z)) but is limited to $maxiters; " *
+                    "use t ≥ $(Float64(L^2 * (40 + max(γ * (Lₜ - z), 0)) / (π^2 * maxiters^2 * k)))"
+            )
+        )
+        return sum(1:ceil(Int, nterms)) do n
             μ = n * T(π) / Lₜ
             2μ * (-1)^n * exp(γ * (Lₜ - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
                 (Lₜ * (γ^2 + μ^2))

@@ -24,6 +24,12 @@ end
         :convdiff1 => [(0.01, 0.05, 0.0), (0.01, 0.95, 0.0039782), (0.1, 0.95, 0.92730929)],
         :convdiff4 => [(0.01, 9.9, 0.4183456), (0.1, 9.0, 0.0213762)],
     )
+    nearL = Dict(
+        :convdiff1 => [(0.001, 0.86178896), (0.005, 0.33369459)],
+        :convdiff2 => [(0.001, 0.98166495), (0.005, 0.90868539)],
+        :convdiff3 => [(0.001, 0.68385034), (0.005, 0.10986312)],
+        :convdiff4 => [(0.001, 0.97759218), (0.005, 0.88711224)],
+    )
     for (name, ps, L, fdvalues) in cases
         system = only(filter(system -> system.name == name, systems))
         analytic = only(values(system.analytic_func))
@@ -44,6 +50,12 @@ end
         for (t, z, expected) in get(smallt, name, ())
             @test analytic(ps, t, z) ≈ expected atol = 1.0e-6
         end
+        # Boundary layer at t = 1e-3 near z = L (Crank-Nicolson, dz = L / 160000).
+        for (off, expected) in nearL[name]
+            @test analytic(ps, 1.0e-3, L - off) ≈ expected atol = 2.0e-5
+        end
+        # Too small t is a loud failure, never a silently truncated series.
+        @test_throws ArgumentError analytic(ps, 1.0e-40, L - 1.0e-5)
         # Long-time limit is the steady state (1 - e^{-vz/k}) / (1 - e^{-vL/k}).
         a = -ps[2] / ps[1]
         steady(z) = expm1(a * z) / expm1(a * L)
