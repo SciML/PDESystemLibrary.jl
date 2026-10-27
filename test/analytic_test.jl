@@ -21,3 +21,10 @@ end
     @test maximum(abs, u_end.(range(0, 1, length = 101))) > 1.0e-3
     @test u_end(0.25) ≈ exp(-4pi^2 * D_value * t_end)
 end
+
+@testset "bruss does not claim an analytic solution" begin
+    system = only(filter(s -> s.name == :bruss, get_pdesys_with_tags(String[])))
+    @test getfield(system, :analytic) === nothing
+    @test "NumericalReference" in system.metadata
+    @test !isempty(system.analytic_func)
+end

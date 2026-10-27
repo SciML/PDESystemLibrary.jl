@@ -32,6 +32,9 @@ v(x, y, 0) = 27(x (1 - x))^{\\frac{3}{2}}
 ```
 
 The boundary conditions are periodic in both ``x`` and ``y``.
+
+There is no closed-form solution. `analytic_func` is a 32x32 finite-difference reference
+solution (interpolated), not an exact one, so the system is tagged `NumericalReference`.
 """
 function brusselator_2d()
     @parameters x y t
@@ -146,7 +149,10 @@ function brusselator_2d()
 
     analytic_func = [u(x, y, t) => u_func, v(x, y, t) => v_func]
 
-    tags = ["2D", "Brusselator", "Periodic", "Nonlinear", "Reaction", "Diffusion"]
+    tags = [
+        "2D", "Brusselator", "Periodic", "Nonlinear", "Reaction", "Diffusion",
+        "NumericalReference",
+    ]
 
     @named bruss = PDESystem(
         eq, bcs, domains, [x, y, t], [u(x, y, t), v(x, y, t)],
