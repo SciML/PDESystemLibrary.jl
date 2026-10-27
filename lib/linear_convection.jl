@@ -406,7 +406,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     # fₛ = expm1(-2γz)/expm1(-2γL) is the steady state and
     # w = Σₙ 2μₙ(-1)ⁿ e^{γ(L-z) - k(γ²+μₙ²)t} sin(μₙz) / (L(γ²+μₙ²))
     # solves the homogeneous problem with initial data -fₛ.
-    maxiters = 1000
+    maxiters = 50_000
 
     function steady(γ, z)
         # Rewritten for γ < 0 so no exponential exceeds 1.
@@ -414,27 +414,30 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
             γ == 0 ? z / L : expm1(-2γ * z) / expm1(-2γ * L)
     end
 
+    # The terms are bounded by e^{γ(L-z) - kμₙ²t}, so truncate where that is below e^{-40}.
     function transient(k, γ, t, z)
-        return sum(1:maxiters) do n
-            μ = n * π / L
-            2μ * (-1)^n * exp(γ * (L - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
-                (L * (γ^2 + μ^2))
+        T = typeof(γ)
+        Lₜ = T(L)
+        nterms = ceil(Int, L / π * sqrt((40 + max(γ * (Lₜ - z), 0)) / (k * t)))
+        return sum(1:min(nterms, maxiters)) do n
+            μ = n * T(π) / Lₜ
+            2μ * (-1)^n * exp(γ * (Lₜ - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
+                (Lₜ * (γ^2 + μ^2))
         end
     end
 
     function u(ps, t, z)
         k = ps[1]
         γ = ps[2] / 2k
+        t == 0 && return f_0(z)
         # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
         # carry enough extra bits to survive the cancellation.
         if γ * L > 1
-            w = setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
-                Float64(transient(big(k), big(γ), big(t), big(z)))
+            return setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
+                Float64(steady(big(γ), big(z)) + transient(big(k), big(γ), big(t), big(z)))
             end
-        else
-            w = transient(k, γ, t, z)
         end
-        return steady(γ, z) + w
+        return steady(γ, z) + transient(k, γ, t, z)
     end
 
     ref = [f(t, z) => u]
