@@ -8,3 +8,9 @@ using Test
 
     @test analytic([], 0.0, 0.5) == 0.5
 end
+
+@testset "all_systems registry" begin
+    names = [system.name for system in PDESystemLibrary.all_systems]
+    @test :trans_sin in names
+    @test allunique(names)
+end
