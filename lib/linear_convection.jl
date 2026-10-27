@@ -39,7 +39,7 @@ function linear_convection(f, ps, name = :linear_convection)
     # PDE system
     lin_conv = PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = u_exact, analytic_func = analytic_funcs(u_exact, [v => ps[1]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 
     return lin_conv
@@ -116,7 +116,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
     # PDE system
     lin_conv = PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = u_exact, analytic_func = analytic_funcs(u_exact, [v => ps[1]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 
     return lin_conv
@@ -196,7 +196,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     # PDE system
     lin_conv = PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = u_exact, analytic_func = analytic_funcs(u_exact, [v => ps[1]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 
     return lin_conv
@@ -279,7 +279,7 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
     # PDE system
     lin_conv = PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = u_exact, analytic_func = analytic_funcs(u_exact, [v => ps[1]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 
     return lin_conv
@@ -355,7 +355,7 @@ function linear_convection_dirichlet4(f, h, ps, name = :linear_convection)
     # PDE system
     lin_conv = PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1]],
-        analytic = u_exact, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = u_exact, analytic_func = analytic_funcs(u_exact, [v => ps[1]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 
     return lin_conv
