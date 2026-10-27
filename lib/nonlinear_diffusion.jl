@@ -20,7 +20,7 @@ function spherical_laplacian()
 
     eq = Dt(u(t, r)) ~ 4 / r^2 * Dr(r^2 * Dr(u(t, r)))
     bcs = [
-        u(0, r) ~ sin(r) / r,
+        u(0, r) ~ ifelse(r == 0, 1, sin(r) / r),
         Dr(u(t, 0)) ~ 0,
         u(t, 1) ~ exp(-4t) * sin(1),
     ]
@@ -31,7 +31,7 @@ function spherical_laplacian()
         r ∈ Interval(0.0, 1.0),
     ]
 
-    u_exact = [u(t, r) ~ exp.(-4t) * sin.(r) ./ r]
+    u_exact = [u(t, r) ~ exp(-4t) * ifelse(r == 0, 1, sin(r) / r)]
 
     tags = ["1D", "Dirichlet", "Neumann", "Spherical", "Diffusion"]
 
