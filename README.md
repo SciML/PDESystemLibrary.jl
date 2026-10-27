@@ -38,14 +38,14 @@ function heat_1d1()
     bcs = [u(0, x) ~ sin(2pi * x),
            u(t, 0) ~ 0.0, u(t, 1) ~ 0.0]
 
-    domains = [t ∈ Interval(0.0, 1.0),
+    domains = [t ∈ Interval(0.0, 0.05),
                x ∈ Interval(0.0, 1.0)]
 
     analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
 
     tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
 
-    @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 0.01],
+    @named heat_1d1 = PDESystem(eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
                                analytic = analytic, metadata = tags)
 
     heat_1d1
