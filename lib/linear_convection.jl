@@ -402,36 +402,42 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         z ∈ Interval(0.0, L),
     ]
 
-    # Analytic/reference solution
-    λ(n) = (n * π / L)^2
-
+    # Analytic/reference solution. With γ = v/2k and μₙ = nπ/L, f = fₛ + w where
+    # fₛ = expm1(-2γz)/expm1(-2γL) is the steady state and
+    # w = Σₙ 2μₙ(-1)ⁿ e^{γ(L-z) - k(γ²+μₙ²)t} sin(μₙz) / (L(γ²+μₙ²))
+    # solves the homogeneous problem with initial data -fₛ.
     maxiters = 1000
 
-    function A(ps, t, z)
-        k = ps[1]
-        v = ps[2]
-        return exp(-((t * v^2) / (4k) + (v * z) / (2k)))
+    function steady(γ, z)
+        # Rewritten for γ < 0 so no exponential exceeds 1.
+        return γ < 0 ? exp(-2γ * (z - L)) * expm1(2γ * z) / expm1(2γ * L) :
+            γ == 0 ? z / L : expm1(-2γ * z) / expm1(-2γ * L)
+    end
+
+    function transient(k, γ, t, z)
+        return sum(1:maxiters) do n
+            μ = n * π / L
+            2μ * (-1)^n * exp(γ * (L - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
+                (L * (γ^2 + μ^2))
+        end
     end
 
     function u(ps, t, z)
         k = ps[1]
-        v = ps[2]
-        a = z / L * exp((t * v^2) / (4k) + (v * L) / (2k))
-        s = mapreduce((+), 1:maxiters) do n
-            acu = (
-                2 * (-1)^n * v^2 * exp(-k * λ(n) * t + (v * L) / (2k)) *
-                    (exp(k * λ(n) * t + (t * v^2) / (4k)) - 1)
-            ) /
-                (n * π * (4 * k^2 * λ(n) + v^2))
-            acu += 2 / L * ((-1)^n) * exp(v * L / (2k)) * exp(-k * λ(n) * t) / sqrt(λ(n))
-            acu *= sin(λ(n) * z)
-
-            acu
+        γ = ps[2] / 2k
+        # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
+        # carry enough extra bits to survive the cancellation.
+        if γ * L > 1
+            w = setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
+                Float64(transient(big(k), big(γ), big(t), big(z)))
+            end
+        else
+            w = transient(k, γ, t, z)
         end
-        return a + s
+        return steady(γ, z) + w
     end
 
-    ref = [f(t, z) => (ps, t, z) -> A(ps, t, z) * u(ps, t, z)]
+    ref = [f(t, z) => u]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection", "Diffusion", "Monotonic"]
 
