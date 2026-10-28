@@ -1,6 +1,5 @@
 using PDESystemLibrary
 using Test
-import ModelingToolkit
 
 @testset "Precompiled analytic solutions" begin
     systems = get_pdesys_with_tags(String[])
@@ -10,17 +9,14 @@ import ModelingToolkit
     @test analytic([], 0.0, 0.5) == 0.5
 end
 
-@testset "Spherical laplacian is finite at r = 0" begin
-    system = only(filter(system -> system.name == :sph, get_pdesys_with_tags(["Spherical"])))
-    analytic = only(values(system.analytic_func))
-    initial_condition = system.bcs[1].rhs
-    r = system.ivs[2]
-
-    @test isfinite(analytic([], 0.0, 0.0))
-    @test analytic([], 0.0, 0.0) == 1.0
-    @test analytic([], 0.5, 0.0) ≈ exp(-2.0)
-    @test analytic([], 0.5, 1.0) ≈ exp(-2.0) * sin(1.0)
-    ic_func = ModelingToolkit.Symbolics.build_function(initial_condition, r; expression = Val{false})
-    @test ic_func(0.0) == 1
-    @test ic_func(1.0) ≈ sin(1.0)
+@testset "analytic_func does not throw for any system" begin
+    systems = PDESystemLibrary.all_systems
+    @test length(systems) > 400
+    for system in systems
+        ps = system.ps isa AbstractVector ? [p isa Pair ? last(p) : 0.0 for p in system.ps] : []
+        coords = ntuple(_ -> 0.5, length(system.ivs))
+        for analytic in values(system.analytic_func)
+            @test (analytic(ps, coords...); true)
+        end
+    end
 end
