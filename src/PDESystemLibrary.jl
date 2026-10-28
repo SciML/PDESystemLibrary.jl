@@ -6,11 +6,21 @@ using ModelingToolkitBase: @named, @parameters, PDESystem
 using OrdinaryDiffEqSDIRK: TRBDF2
 import RuntimeGeneratedFunctions
 using SciMLBase: ODEProblem
-using Symbolics: @variables, Differential
+using Symbolics: @variables, Differential, arguments, build_function, unwrap
 
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
 all_systems = []
+
+# ModelingToolkitBase < 1.78.1 splices `Pair` parameters into a destructuring assignment when it
+# builds `analytic_func` from `analytic`, so for such systems build the functions here.
+function analytic_funcs(analytic, ps)
+    return map(analytic) do eq
+        ex = build_function(eq.rhs, first.(ps)..., arguments(unwrap(eq.lhs))...; expression = Val{true})
+        f = RuntimeGeneratedFunctions.RuntimeGeneratedFunction(@__MODULE__, @__MODULE__, ex)
+        eq.lhs => (p, args...) -> f(p..., args...)
+    end
+end
 
 include("../lib/burgers.jl")
 include("../lib/linear_diffusion.jl")
