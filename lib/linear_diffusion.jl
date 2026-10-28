@@ -35,7 +35,7 @@ function heat_1d1()
 
     @named heat_1d1 = PDESystem(
         eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
-        analytic = analytic, metadata = tags, eval_module = @__MODULE__
+        analytic = analytic, analytic_func = analytic_funcs(analytic, [D => 1.0]), metadata = tags, eval_module = @__MODULE__
     )
 
     return heat_1d1
