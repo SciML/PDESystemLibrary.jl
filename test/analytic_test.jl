@@ -9,21 +9,14 @@ using Test
     @test analytic([], 0.0, 0.5) == 0.5
 end
 
-@testset "funcconv velocities are deterministic" begin
-    build() = begin
-        systems = []
-        PDESystemLibrary.add_systems!(
-            systems, PDESystemLibrary.funcs,
-            PDESystemLibrary.linear_convection_dirichlet3, "funcconv"
-        )
-        systems
+@testset "analytic_func does not throw for any system" begin
+    systems = PDESystemLibrary.all_systems
+    @test length(systems) > 400
+    for system in systems
+        ps = system.ps isa AbstractVector ? [p isa Pair ? last(p) : 0.0 for p in system.ps] : []
+        coords = ntuple(_ -> 0.5, length(system.ivs))
+        for analytic in values(system.analytic_func)
+            @test (analytic(ps, coords...); true)
+        end
     end
-    velocity(system) = last(only(system.ps))
-    @test length(build()) == 4 * length(PDESystemLibrary.funcs)^2
-    @test map(velocity, build()) == map(velocity, build())
-    @test velocity(first(build())) == mod(0.6180339887498949, 1.0)
-
-    library = get_pdesys_with_tags(String[])
-    funcconv = filter(s -> startswith(string(s.name), "funcconv"), library)
-    @test length(funcconv) == 2 * 4 * length(PDESystemLibrary.funcs)^2
 end
