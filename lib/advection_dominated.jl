@@ -50,7 +50,7 @@ function advection_dominated_gaussian(ps, name = :advdom_gaussian; x0 = 0.2, t0 
 
     return PDESystem(
         eq, bcs, domains, [t, x], [u(t, x)], [v => ps[1], eps => ps[2]],
-        analytic = analytic, metadata = tags, name = name, eval_module = @__MODULE__
+        analytic = analytic, analytic_func = analytic_funcs(analytic, [v => ps[1], eps => ps[2]]), metadata = tags, name = name, eval_module = @__MODULE__
     )
 end
 
