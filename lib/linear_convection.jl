@@ -512,3 +512,5 @@ function trans_sin()
 
     return trans_sin
 end
+
+push!(all_systems, trans_sin())
