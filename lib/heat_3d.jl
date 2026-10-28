@@ -44,7 +44,7 @@ function heat_3d()
 
     @named heat_3d = PDESystem(
         eqs, bcs, domains, [t, x, y, z], [u(t, x, y, z)], [k => 0.1],
-        analytic = analytic, metadata = tags, eval_module = @__MODULE__
+        analytic = analytic, analytic_func = analytic_funcs(analytic, [k => 0.1]), metadata = tags, eval_module = @__MODULE__
     )
 
     return heat_3d
