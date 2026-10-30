@@ -286,21 +286,25 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
 end
 
 funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
+# Deterministic velocities in (0, 1): the k-th term of the golden-ratio low-discrepancy sequence.
+velocity_sample(k) = mod(k * 0.6180339887498949, 1.0)
 function add_systems!(all_systems, funcs, sysconstructor, name)
     i = 0
+    k = 0
+    rand_v() = velocity_sample(k += 1)
     for f in funcs
         for h in funcs
-            conv = sysconstructor(f, h, [rand()], Symbol(name, i))
+            conv = sysconstructor(f, h, [rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
-            conv = sysconstructor(f, x -> -2 * h(x), [2 * rand()], Symbol(name, i))
+            conv = sysconstructor(f, x -> -2 * h(x), [2 * rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
-            conv = sysconstructor(x -> -10 * f(x), h, [rand()], Symbol(name, i))
+            conv = sysconstructor(x -> -10 * f(x), h, [rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
             conv = sysconstructor(
-                x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                x -> -6 * f(x), x -> -5 * h(x), [rand_v()],
                 Symbol(name, i)
             )
             push!(all_systems, conv)
