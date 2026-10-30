@@ -25,7 +25,7 @@ function heat_1d1()
     ]
 
     domains = [
-        t ∈ Interval(0.0, 1.0),
+        t ∈ Interval(0.0, 0.05),
         x ∈ Interval(0.0, 1.0),
     ]
 
