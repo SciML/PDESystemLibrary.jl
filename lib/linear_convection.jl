@@ -123,7 +123,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
 end
 
 function windowlower(f, x, domain = (0.0, 1.0))
-    return ifelse(x <= domain[1], ifelse(x > domain[2], f, 0.0), 0.0)
+    return ifelse(x >= domain[1], ifelse(x <= domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
