@@ -123,7 +123,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
 end
 
 function windowlower(f, x, domain = (0.0, 1.0))
-    return ifelse(x <= domain[1], ifelse(x > domain[2], f, 0.0), 0.0)
+    return ifelse(x >= domain[1], ifelse(x <= domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -180,7 +180,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 
     bcs = [
         u(0, x) ~ f(x),
-        u(t, 2 / ps[1]) ~ 0.0,
+        u(t, 1.0) ~ 0.0,
     ]
     # Space and time domains
     domains = [
@@ -189,7 +189,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     ]
 
     # Analytic solution
-    u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
+    u_exact = [u(t, x) ~ windowupper(f(x + v * t), x + v * t)]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
@@ -203,25 +203,25 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 end
 
 function windowupper(f, x, domain = (0.0, 1.0))
-    return ifelse(x < domain[1], ifelse(x >= domain[2], f, 0.0), 0.0)
+    return ifelse(x <= domain[2], ifelse(x >= domain[1], f, 0.0), 0.0)
 end
 
 # sinusoidal input
-convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [1], :ddconvsin)
+convsin = linear_convection_dirichlet2(x -> sin(2pi * x), [1], :ddconvsin)
 push!(convsin.metadata, "Sinusoidal")
 push!(all_systems, convsin)
 
-convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [0.5], :ddconvsin2)
+convsin = linear_convection_dirichlet2(x -> sin(2pi * x), [0.5], :ddconvsin2)
 push!(convsin.metadata, "Sinusoidal")
 push!(all_systems, convsin)
 
 #cosine input
-convcos = linear_convection_dirichlet1(x -> cos(2pi * x), [0.7], :ddconvcos)
+convcos = linear_convection_dirichlet2(x -> cos(2pi * x), [0.7], :ddconvcos)
 push!(convcos.metadata, "Sinusoidal")
 push!(all_systems, convcos)
 
 # triangular input
-convtri = linear_convection_dirichlet1(
+convtri = linear_convection_dirichlet2(
     x -> 1.0 - abs(x - floor(x + 0.5)), [0.1],
     :ddconvtri
 )
@@ -231,7 +231,7 @@ push!(all_systems, convtri)
 # square wave
 sq = f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
-convsquare = linear_convection_dirichlet1(f, [3.1], :ddconvsquare)
+convsquare = linear_convection_dirichlet2(f, [3.1], :ddconvsquare)
 push!(convsquare.metadata, "Square")
 push!(convsquare.metadata, "Discontinuous")
 push!(all_systems, convsquare)
