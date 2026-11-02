@@ -25,7 +25,7 @@ function heat_1d1()
     ]
 
     domains = [
-        t ∈ Interval(0.0, 0.05),
+        t ∈ Interval(0.0, 1.0),
         x ∈ Interval(0.0, 1.0),
     ]
 
@@ -41,6 +41,46 @@ function heat_1d1()
     return heat_1d1
 end
 push!(all_systems, heat_1d1())
+
+"""
+# The Heat Equation in 1D with Dirichlet Boundary Conditions, Short Time Span.
+
+The same problem as `heat_1d1` (same PDE, boundary conditions, initial condition, `D = 1` and
+analytic solution), but on `t ∈ [0, 0.05]` instead of `[0, 1]`.
+The solution decays like ``e^{-4\\pi^2 D t}``, which is about ``7 \\times 10^{-18}`` at `t = 1`, so `heat_1d1`
+cannot discriminate between solvers at its final time. Here the solution at the final time is about
+0.14 of the initial amplitude, which makes it usable as an accuracy benchmark.
+"""
+function heat_1d1_short()
+    @parameters x t D
+    @variables u(..)
+
+    Dxx = Differential(x)^2
+    Dt = Differential(t)
+
+    eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
+    bcs = [
+        u(0, x) ~ sin(2pi * x),
+        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0,
+    ]
+
+    domains = [
+        t ∈ Interval(0.0, 0.05),
+        x ∈ Interval(0.0, 1.0),
+    ]
+
+    analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
+
+    tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat", "ShortTime"]
+
+    @named heat_1d1_short = PDESystem(
+        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
+        analytic = analytic, analytic_func = analytic_funcs(analytic, [D => 1.0]), metadata = tags, eval_module = @__MODULE__
+    )
+
+    return heat_1d1_short
+end
+push!(all_systems, heat_1d1_short())
 
 """
 # The Heat Equation in 1D with Neumann Boundary Conditions.
