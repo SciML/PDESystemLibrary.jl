@@ -123,7 +123,7 @@ function linear_convection_dirichlet1(f, ps, name = :linear_convection)
 end
 
 function windowlower(f, x, domain = (0.0, 1.0))
-    return ifelse(x <= domain[1], ifelse(x > domain[2], f, 0.0), 0.0)
+    return ifelse(x >= domain[1], ifelse(x <= domain[2], f, 0.0), 0.0)
 end
 
 # sinusoidal input
@@ -180,7 +180,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 
     bcs = [
         u(0, x) ~ f(x),
-        u(t, 2 / ps[1]) ~ 0.0,
+        u(t, 1.0) ~ 0.0,
     ]
     # Space and time domains
     domains = [
@@ -189,7 +189,7 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
     ]
 
     # Analytic solution
-    u_exact = [u(t, x) ~ windowlower(f(x - v * t), x - v * t)]
+    u_exact = [u(t, x) ~ windowupper(f(x + v * t), x + v * t)]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection"]
 
@@ -203,25 +203,25 @@ function linear_convection_dirichlet2(f, ps, name = :linear_convection)
 end
 
 function windowupper(f, x, domain = (0.0, 1.0))
-    return ifelse(x < domain[1], ifelse(x >= domain[2], f, 0.0), 0.0)
+    return ifelse(x <= domain[2], ifelse(x >= domain[1], f, 0.0), 0.0)
 end
 
 # sinusoidal input
-convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [1], :ddconvsin)
+convsin = linear_convection_dirichlet2(x -> sin(2pi * x), [1], :ddconvsin)
 push!(convsin.metadata, "Sinusoidal")
 push!(all_systems, convsin)
 
-convsin = linear_convection_dirichlet1(x -> sin(2pi * x), [0.5], :ddconvsin2)
+convsin = linear_convection_dirichlet2(x -> sin(2pi * x), [0.5], :ddconvsin2)
 push!(convsin.metadata, "Sinusoidal")
 push!(all_systems, convsin)
 
 #cosine input
-convcos = linear_convection_dirichlet1(x -> cos(2pi * x), [0.7], :ddconvcos)
+convcos = linear_convection_dirichlet2(x -> cos(2pi * x), [0.7], :ddconvcos)
 push!(convcos.metadata, "Sinusoidal")
 push!(all_systems, convcos)
 
 # triangular input
-convtri = linear_convection_dirichlet1(
+convtri = linear_convection_dirichlet2(
     x -> 1.0 - abs(x - floor(x + 0.5)), [0.1],
     :ddconvtri
 )
@@ -231,7 +231,7 @@ push!(all_systems, convtri)
 # square wave
 sq = f = (x) -> ifelse(x - floor(x) < 0.5, 1.0, -1.0)
 
-convsquare = linear_convection_dirichlet1(f, [3.1], :ddconvsquare)
+convsquare = linear_convection_dirichlet2(f, [3.1], :ddconvsquare)
 push!(convsquare.metadata, "Square")
 push!(convsquare.metadata, "Discontinuous")
 push!(all_systems, convsquare)
@@ -286,21 +286,25 @@ function linear_convection_dirichlet3(f, h, ps, name = :linear_convection)
 end
 
 funcs = [x -> x, x -> x^2, x -> x^3, sinpi, cospi, x -> 1.0 - abs(x - floor(x + 0.5)), sq]
+# Deterministic velocities in (0, 1): the k-th term of the golden-ratio low-discrepancy sequence.
+velocity_sample(k) = mod(k * 0.6180339887498949, 1.0)
 function add_systems!(all_systems, funcs, sysconstructor, name)
     i = 0
+    k = 0
+    rand_v() = velocity_sample(k += 1)
     for f in funcs
         for h in funcs
-            conv = sysconstructor(f, h, [rand()], Symbol(name, i))
+            conv = sysconstructor(f, h, [rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
-            conv = sysconstructor(f, x -> -2 * h(x), [2 * rand()], Symbol(name, i))
+            conv = sysconstructor(f, x -> -2 * h(x), [2 * rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
-            conv = sysconstructor(x -> -10 * f(x), h, [rand()], Symbol(name, i))
+            conv = sysconstructor(x -> -10 * f(x), h, [rand_v()], Symbol(name, i))
             push!(all_systems, conv)
             i += 1
             conv = sysconstructor(
-                x -> -6 * f(x), x -> -5 * h(x), [rand()],
+                x -> -6 * f(x), x -> -5 * h(x), [rand_v()],
                 Symbol(name, i)
             )
             push!(all_systems, conv)
@@ -512,3 +516,5 @@ function trans_sin()
 
     return trans_sin
 end
+
+push!(all_systems, trans_sin())
