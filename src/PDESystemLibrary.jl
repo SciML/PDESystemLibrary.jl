@@ -24,11 +24,12 @@ end
 
 include("../lib/burgers.jl")
 include("../lib/linear_diffusion.jl")
+include("../lib/heat_3d.jl")
 include("../lib/linear_convection.jl")
 include("../lib/nonlinear_diffusion.jl")
 include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
-include("../lib/heat_3d.jl")
+include("../lib/robin.jl")
 
 """
     get_pdesys_with_tags(withtags; without = [], f = all)
