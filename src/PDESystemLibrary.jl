@@ -29,6 +29,7 @@ include("../lib/nonlinear_diffusion.jl")
 include("../lib/general_linear_system.jl")
 include("../lib/brusselator.jl")
 include("../lib/elliptic.jl")
+include("../lib/robin.jl")
 
 """
     get_pdesys_with_tags(withtags; without = [], f = all)
