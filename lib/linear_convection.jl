@@ -363,7 +363,46 @@ end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
 
-const bigfloat_precision_lock = ReentrantLock()
+# BigFloat whose arithmetic takes its precision from its operands. On Julia 1.10 BigFloat operations
+# use the process-wide precision, and setprecision is process-wide too, so convection_diffusion's
+# high-precision path calls MPFR directly with an explicitly sized destination instead.
+struct ExtFloat <: Real
+    value::BigFloat
+end
+ExtFloat(x::Real, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
+Base.precision(a::ExtFloat) = precision(a.value)
+Base.Float64(a::ExtFloat) = Float64(a.value)
+Base.one(a::ExtFloat) = ExtFloat(1, precision(a))
+Base.:^(a::ExtFloat, n::Integer) = Base.power_by_squaring(a, n)
+for (op, mpfr) in ((:+, :mpfr_add), (:-, :mpfr_sub), (:*, :mpfr_mul), (:/, :mpfr_div))
+    @eval function Base.$op(a::ExtFloat, b::ExtFloat)
+        z = BigFloat(; precision = max(precision(a), precision(b)))
+        ccall(
+            ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
+            (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
+            z, a.value, b.value, Base.MPFR.MPFRRoundNearest
+        )
+        return ExtFloat(z)
+    end
+    @eval Base.$op(a::ExtFloat, b::Real) = $op(a, ExtFloat(b, precision(a)))
+    @eval Base.$op(a::Real, b::ExtFloat) = $op(ExtFloat(a, precision(b)), b)
+end
+for (fn, mpfr) in ((:exp, :mpfr_exp), (:expm1, :mpfr_expm1), (:sin, :mpfr_sin))
+    @eval function Base.$fn(a::ExtFloat)
+        z = BigFloat(; precision = precision(a))
+        ccall(
+            ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
+            (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
+            z, a.value, Base.MPFR.MPFRRoundNearest
+        )
+        return ExtFloat(z)
+    end
+end
+for op in (:<, :(==))
+    @eval Base.$op(a::ExtFloat, b::ExtFloat) = $op(a.value, b.value)
+    @eval Base.$op(a::ExtFloat, b::Real) = $op(a.value, b)
+    @eval Base.$op(a::Real, b::ExtFloat) = $op(a, b.value)
+end
 
 """
 # Convection Diffusion Equation in 1D
@@ -420,18 +459,20 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
 
     # The terms are bounded by e^{γ(L-z) - kμₙ²t}, so truncate where that is below e^{-40}.
     function transient(k, γ, t, z)
-        T = typeof(γ)
-        Lₜ = T(L)
-        nterms = L / π * sqrt((40 + max(γ * (Lₜ - z), 0)) / (k * t))
+        Lₜ = one(γ) * L
+        πₜ = π * one(γ)
+        # The term count only needs Float64.
+        reach = 40 + max(Float64(γ) * (L - Float64(z)), 0)
+        nterms = L / π * sqrt(reach / (Float64(k) * Float64(t)))
         nterms <= maxiters || throw(
             ArgumentError(
                 "convection_diffusion analytic solution needs ≈$(round(Float64(nterms))) series terms at " *
                     "t = $(Float64(t)), z = $(Float64(z)) but is limited to $maxiters; " *
-                    "use t ≥ $(Float64(L^2 * (40 + max(γ * (Lₜ - z), 0)) / (π^2 * maxiters^2 * k)))"
+                    "use t ≥ $(L^2 * reach / (π^2 * maxiters^2 * Float64(k)))"
             )
         )
         return sum(1:ceil(Int, nterms)) do n
-            μ = n * T(π) / Lₜ
+            μ = n * πₜ / Lₜ
             2μ * (-1)^n * exp(γ * (Lₜ - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
                 (Lₜ * (γ^2 + μ^2))
         end
@@ -444,11 +485,9 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
         # carry enough extra bits to survive the cancellation.
         if γ * L > 1
-            # On Julia 1.10 setprecision(BigFloat, ...) is process-wide and BigFloat operations
-            # use it rather than their operands' precision, so serialize the evaluations.
-            return @lock bigfloat_precision_lock setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
-                Float64(steady(big(γ), big(z)) + transient(big(k), big(γ), big(t), big(z)))
-            end
+            bits = 64 + ceil(Int, 3γ * L)
+            big_(x) = ExtFloat(x, bits)
+            return Float64(steady(big_(γ), big_(z)) + transient(big_(k), big_(γ), big_(t), big_(z)))
         end
         return steady(γ, z) + transient(k, γ, t, z)
     end

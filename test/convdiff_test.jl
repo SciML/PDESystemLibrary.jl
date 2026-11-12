@@ -56,9 +56,9 @@ using Test
     end
 end
 
-# setprecision(BigFloat, ...) is process-wide on Julia 1.10, so the high-precision path
-# must neither change nor depend on the ambient precision.
-@testset "convection_diffusion leaves BigFloat precision alone" begin
+# On Julia 1.10 setprecision(BigFloat, ...) is process-wide and BigFloat operations read it, so the
+# high-precision path must neither change the ambient precision nor depend on it.
+@testset "convection_diffusion is independent of the global BigFloat precision" begin
     systems = get_pdesys_with_tags(String[])
     analytic(name) = only(values(only(filter(system -> system.name == name, systems)).analytic_func))
     ambient = precision(BigFloat)
@@ -66,22 +66,40 @@ end
         analytic(name)([0.5, 3.0], 1.0e-3, 5.0)
         @test precision(BigFloat) == ambient
     end
-    # γL > 1 takes the BigFloat path.
-    @test analytic(:convdiff4)([0.5, 3.0], 5.0e-7, 5.0) isa Float64
-    @test precision(BigFloat) == ambient
 
-    # Concurrent evaluations with different γL must match their serial values.
     u1 = analytic(:convdiff1)
     u4 = analytic(:convdiff4)
-    args1 = ([0.01, 8.0], 1.0e-6, 0.5)
-    args4 = ([0.5, 3.0], 5.0e-7, 5.0)
+    args1 = ([0.01, 8.0], 1.0e-6, 0.5)  # γL = 400
+    args4 = ([0.5, 3.0], 5.0e-7, 5.0)   # γL = 30
     serial1 = u1(args1...)
     serial4 = u4(args4...)
-    for _ in 1:3
-        tasks1 = [Threads.@spawn(u1(args1...)) for _ in 1:2]
-        tasks4 = [Threads.@spawn(u4(args4...)) for _ in 1:2]
-        @test all(==(serial1), fetch.(tasks1))
-        @test all(==(serial4), fetch.(tasks4))
+    @test precision(BigFloat) == ambient
+
+    # Unrelated BigFloat arithmetic that needs the ambient precision stays exact during an evaluation.
+    evaluation = Threads.@spawn u4(args4...)
+    exact = true
+    checks = 0
+    while true
+        done = istaskdone(evaluation)
+        x = BigFloat(2)^200
+        exact &= (x + 1) - x == 1
+        checks += 1
+        done && break
+        yield()
     end
+    @test exact
+    @test fetch(evaluation) == serial4
+    @test precision(BigFloat) == ambient
+
+    # Evaluations are unaffected by another caller repeatedly changing the global precision.
+    stop = Threads.Atomic{Bool}(false)
+    toggler = Threads.@spawn while !stop[]
+        setprecision(() -> BigFloat(3)^100, BigFloat, 64)
+        yield()
+    end
+    results = [u1(args1...), u4(args4...), u1(args1...)]
+    stop[] = true
+    wait(toggler)
+    @test results == [serial1, serial4, serial1]
     @test precision(BigFloat) == ambient
 end
