@@ -373,7 +373,7 @@ end
 const MPFR_RNDN = Cint(0)  # round to nearest
 # The only operand types mixed with ExtFloat; deliberately not Real, to avoid ambiguities with other packages.
 const ExtOperand = Union{Int, Float64, AbstractIrrational}
-ExtFloat(x::ExtOperand, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
+ExtFloat(x::Real, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
 Base.precision(a::ExtFloat) = precision(a.value)
 Base.Float64(a::ExtFloat) = Float64(a.value)
 Base.one(a::ExtFloat) = ExtFloat(1, precision(a))

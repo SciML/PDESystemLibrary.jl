@@ -74,6 +74,9 @@ end
     serial1 = u1(args1...)
     serial4 = u4(args4...)
     @test precision(BigFloat) == ambient
+    # Other real input types are accepted by the high-precision path.
+    @test u1(args1[1], BigFloat(args1[2]), Float32(args1[3])) == serial1
+    @test u1(Float32.(args1[1]), args1[2], args1[3]) isa Float64
 
     # Unrelated BigFloat arithmetic that needs the ambient precision stays exact during an evaluation.
     evaluation = Threads.@spawn u4(args4...)
