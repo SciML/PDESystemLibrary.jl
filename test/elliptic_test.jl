@@ -14,11 +14,12 @@ using Test
         return all(((xv, yv),) -> abs(f(xv, yv)) < 1.0e-12, points)
     end
 
-    # PDE: the exact solution's derivatives satisfy the equation.
+    # PDE: the stored equation, with the exact solution's derivatives substituted for u's, vanishes.
     eq = only(system.eqs)
     derivative(expr, D) = expand_derivatives(D(expr))
-    laplacian = sum(D -> derivative(exact, D), [Differential(x)^2, Differential(y)^2])
-    @test vanishes(laplacian - eq.rhs)
+    u = only(system.dvs)
+    derivs = Dict(D(u) => derivative(exact, D) for D in [Differential(x)^2, Differential(y)^2])
+    @test vanishes(substitute(eq.lhs - eq.rhs, derivs))
 
     # BCs: the exact solution (or its derivative, for Neumann edges) matches each edge.
     for bc in system.bcs
