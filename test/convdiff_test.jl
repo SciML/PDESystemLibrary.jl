@@ -78,6 +78,12 @@ end
     @test u1(args1[1], BigFloat(args1[2]), Float32(args1[3])) == serial1
     @test u1(Float32.(args1[1]), args1[2], args1[3]) isa Float64
 
+    # Non-Float64 domain lengths work too.
+    for L in (Float32(1), big"1.0")
+        system = PDESystemLibrary.convection_diffusion(L, [0.01, 8.0])
+        @test only(values(system.analytic_func))([0.01, 8.0], 1.0e-3, 0.5) isa Float64
+    end
+
     # Unrelated BigFloat arithmetic that needs the ambient precision stays exact during an evaluation.
     evaluation = Threads.@spawn u4(args4...)
     exact = true
