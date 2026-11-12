@@ -363,6 +363,8 @@ end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
 
+const bigfloat_precision_lock = ReentrantLock()
+
 """
 # Convection Diffusion Equation in 1D
 
@@ -442,7 +444,9 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
         # carry enough extra bits to survive the cancellation.
         if γ * L > 1
-            return setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
+            # On Julia 1.10 setprecision(BigFloat, ...) is process-wide and BigFloat operations
+            # use it rather than their operands' precision, so serialize the evaluations.
+            return @lock bigfloat_precision_lock setprecision(BigFloat, 64 + ceil(Int, 3γ * L)) do
                 Float64(steady(big(γ), big(z)) + transient(big(k), big(γ), big(t), big(z)))
             end
         end

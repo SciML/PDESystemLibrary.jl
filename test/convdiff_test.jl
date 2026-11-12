@@ -55,3 +55,33 @@ using Test
         a < 0 && @test analytic(ps, 100.0, z) ≈ steady(z) atol = 1.0e-8
     end
 end
+
+# setprecision(BigFloat, ...) is process-wide on Julia 1.10, so the high-precision path
+# must neither change nor depend on the ambient precision.
+@testset "convection_diffusion leaves BigFloat precision alone" begin
+    systems = get_pdesys_with_tags(String[])
+    analytic(name) = only(values(only(filter(system -> system.name == name, systems)).analytic_func))
+    ambient = precision(BigFloat)
+    for name in (:convdiff1, :convdiff2, :convdiff3, :convdiff4)
+        analytic(name)([0.5, 3.0], 1.0e-3, 5.0)
+        @test precision(BigFloat) == ambient
+    end
+    # γL > 1 takes the BigFloat path.
+    @test analytic(:convdiff4)([0.5, 3.0], 5.0e-7, 5.0) isa Float64
+    @test precision(BigFloat) == ambient
+
+    # Concurrent evaluations with different γL must match their serial values.
+    u1 = analytic(:convdiff1)
+    u4 = analytic(:convdiff4)
+    args1 = ([0.01, 8.0], 1.0e-6, 0.5)
+    args4 = ([0.5, 3.0], 5.0e-7, 5.0)
+    serial1 = u1(args1...)
+    serial4 = u4(args4...)
+    for _ in 1:3
+        tasks1 = [Threads.@spawn(u1(args1...)) for _ in 1:2]
+        tasks4 = [Threads.@spawn(u4(args4...)) for _ in 1:2]
+        @test all(==(serial1), fetch.(tasks1))
+        @test all(==(serial4), fetch.(tasks4))
+    end
+    @test precision(BigFloat) == ambient
+end
