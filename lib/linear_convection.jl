@@ -368,40 +368,44 @@ add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
 # high-precision path calls MPFR directly with an explicitly sized destination instead.
 struct ExtFloat <: Real
     value::BigFloat
+    ExtFloat(value::BigFloat) = new(value)
 end
-ExtFloat(x::Real, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
+const MPFR_RNDN = Cint(0)  # round to nearest
+# The only operand types mixed with ExtFloat; deliberately not Real, to avoid ambiguities with other packages.
+const ExtOperand = Union{Int, Float64, AbstractIrrational}
+ExtFloat(x::ExtOperand, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
 Base.precision(a::ExtFloat) = precision(a.value)
 Base.Float64(a::ExtFloat) = Float64(a.value)
 Base.one(a::ExtFloat) = ExtFloat(1, precision(a))
-Base.:^(a::ExtFloat, n::Integer) = Base.power_by_squaring(a, n)
+Base.:^(a::ExtFloat, n::Integer) = n == 2 ? a * a : throw(ArgumentError("ExtFloat supports only squaring"))
 for (op, mpfr) in ((:+, :mpfr_add), (:-, :mpfr_sub), (:*, :mpfr_mul), (:/, :mpfr_div))
     @eval function Base.$op(a::ExtFloat, b::ExtFloat)
         z = BigFloat(; precision = max(precision(a), precision(b)))
         ccall(
             ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
-            (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
-            z, a.value, b.value, Base.MPFR.MPFRRoundNearest
+            (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, Cint),
+            z, a.value, b.value, MPFR_RNDN
         )
         return ExtFloat(z)
     end
-    @eval Base.$op(a::ExtFloat, b::Real) = $op(a, ExtFloat(b, precision(a)))
-    @eval Base.$op(a::Real, b::ExtFloat) = $op(ExtFloat(a, precision(b)), b)
+    @eval Base.$op(a::ExtFloat, b::ExtOperand) = $op(a, ExtFloat(b, precision(a)))
+    @eval Base.$op(a::ExtOperand, b::ExtFloat) = $op(ExtFloat(a, precision(b)), b)
 end
 for (fn, mpfr) in ((:exp, :mpfr_exp), (:expm1, :mpfr_expm1), (:sin, :mpfr_sin))
     @eval function Base.$fn(a::ExtFloat)
         z = BigFloat(; precision = precision(a))
         ccall(
             ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
-            (Ref{BigFloat}, Ref{BigFloat}, Base.MPFR.MPFRRoundingMode),
-            z, a.value, Base.MPFR.MPFRRoundNearest
+            (Ref{BigFloat}, Ref{BigFloat}, Cint),
+            z, a.value, MPFR_RNDN
         )
         return ExtFloat(z)
     end
 end
 for op in (:<, :(==))
     @eval Base.$op(a::ExtFloat, b::ExtFloat) = $op(a.value, b.value)
-    @eval Base.$op(a::ExtFloat, b::Real) = $op(a.value, b)
-    @eval Base.$op(a::Real, b::ExtFloat) = $op(a, b.value)
+    @eval Base.$op(a::ExtFloat, b::Union{Int, Float64}) = $op(a.value, b)
+    @eval Base.$op(a::Union{Int, Float64}, b::ExtFloat) = $op(a, b.value)
 end
 
 """
