@@ -363,49 +363,87 @@ end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
 
-# BigFloat whose arithmetic takes its precision from its operands. On Julia 1.10 BigFloat operations
-# use the process-wide precision, and setprecision is process-wide too, so convection_diffusion's
-# high-precision path calls MPFR directly with an explicitly sized destination instead.
-struct ExtFloat <: Real
-    value::BigFloat
-    ExtFloat(value::BigFloat) = new(value)
+# Fixed-point BigInt arithmetic (value = n / 2^p) for the γL > 1 series, whose terms of size e^{γL}
+# cancel to O(1). It uses only public BigInt operations, so it neither reads nor sets the global
+# BigFloat precision, which is process-wide on Julia 1.10.
+function fixed(x, p)
+    m, e = frexp(Float64(x))
+    n = BigInt(ldexp(m, 53))
+    return p + e - 53 >= 0 ? n << (p + e - 53) : n >> -(p + e - 53)
 end
-const MPFR_RNDN = Cint(0)  # round to nearest
-# The only operand types mixed with ExtFloat; deliberately not Real, to avoid ambiguities with other packages.
-const ExtOperand = Union{Int, Float32, Float64, BigFloat, AbstractIrrational}
-ExtFloat(x::Real, bits::Integer) = ExtFloat(BigFloat(x; precision = bits))
-Base.precision(a::ExtFloat) = precision(a.value)
-Base.Float64(a::ExtFloat) = Float64(a.value)
-Base.one(a::ExtFloat) = ExtFloat(1, precision(a))
-Base.:^(a::ExtFloat, n::Integer) = n == 2 ? a * a : throw(ArgumentError("ExtFloat supports only squaring"))
-for (op, mpfr) in ((:+, :mpfr_add), (:-, :mpfr_sub), (:*, :mpfr_mul), (:/, :mpfr_div))
-    @eval function Base.$op(a::ExtFloat, b::ExtFloat)
-        z = BigFloat(; precision = max(precision(a), precision(b)))
-        ccall(
-            ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
-            (Ref{BigFloat}, Ref{BigFloat}, Ref{BigFloat}, Cint),
-            z, a.value, b.value, MPFR_RNDN
-        )
-        return ExtFloat(z)
+
+function fixedexp(x, p)
+    m = max(ndigits(abs(x); base = 2) - p + 16, 0)  # reduce below 2^-16, square back m times
+    r = x >> m
+    term = total = BigInt(1) << p
+    j = 0
+    while term != 0
+        term = div((term * r) >> p, j += 1)
+        total += term
     end
-    @eval Base.$op(a::ExtFloat, b::ExtOperand) = $op(a, ExtFloat(b, precision(a)))
-    @eval Base.$op(a::ExtOperand, b::ExtFloat) = $op(ExtFloat(a, precision(b)), b)
-end
-for (fn, mpfr) in ((:exp, :mpfr_exp), (:expm1, :mpfr_expm1), (:sin, :mpfr_sin))
-    @eval function Base.$fn(a::ExtFloat)
-        z = BigFloat(; precision = precision(a))
-        ccall(
-            ($(QuoteNode(mpfr)), Base.MPFR.libmpfr), Int32,
-            (Ref{BigFloat}, Ref{BigFloat}, Cint),
-            z, a.value, MPFR_RNDN
-        )
-        return ExtFloat(z)
+    for _ in 1:m
+        total = (total * total) >> p
     end
+    return total
 end
-for op in (:<, :(==))
-    @eval Base.$op(a::ExtFloat, b::ExtFloat) = $op(a.value, b.value)
-    @eval Base.$op(a::ExtFloat, b::Union{Int, Float64}) = $op(a.value, b)
-    @eval Base.$op(a::Union{Int, Float64}, b::ExtFloat) = $op(a, b.value)
+
+function fixedsincos(x, p)
+    sn = cs = BigInt(0)
+    term = BigInt(1) << p
+    j = 0
+    while term != 0
+        j % 4 == 0 ? (cs += term) : j % 4 == 1 ? (sn += term) : j % 4 == 2 ? (cs -= term) : (sn -= term)
+        term = div((term * x) >> p, j += 1)
+    end
+    return sn, cs
+end
+
+function fixedpi(p)  # Machin: 16 atan(1/5) - 4 atan(1/239)
+    function ataninv(n)
+        x = (BigInt(1) << p) ÷ n
+        total = x
+        for k in 3:2:p
+            x = x ÷ n^2
+            x == 0 && break
+            total += (k % 4 == 1 ? 1 : -1) * (x ÷ k)
+        end
+        return total
+    end
+    return 16 * ataninv(5) - 4 * ataninv(239)
+end
+
+# steady + transient of the convection_diffusion solution (see there) for γ > 0, in fixed point
+# with 64 + ⌈3γL⌉ bits plus 64 guard bits; the series is summed with the recurrences
+# e^{-k t μₙ²} = e^{-k t μ₁²n²} and sin(nθ) = 2cos(θ) sin((n-1)θ) - sin((n-2)θ).
+function convdiff_fixed(L, k, γ, t, z, nterms)
+    L, k, γ, t, z = Float64.((L, k, γ, t, z))
+    p = 128 + ceil(Int, 3γ * L)
+    one_ = BigInt(1) << p
+    mul(a, b) = (a * b) >> p
+    quo(a, b) = div(a << p, b)
+    Lₚ, kₚ, γₚ, tₚ, zₚ = fixed.((L, k, γ, t, z), p)
+    steady = quo(one_ - fixedexp(-2mul(γₚ, zₚ), p), one_ - fixedexp(-2mul(γₚ, Lₚ), p))
+    μ₁ = quo(fixedpi(p), Lₚ)
+    sinθ, cosθ = fixedsincos(mul(μ₁, zₚ), p)
+    γ² = mul(γₚ, γₚ)
+    kt = mul(kₚ, tₚ)
+    decay = fixedexp(-mul(kt, mul(μ₁, μ₁)), p)  # e^{-k t μ₁²}
+    q, ratio, step = one_, decay, mul(decay, decay)
+    sₙ₋₁, sₙ = BigInt(0), sinθ
+    series = BigInt(0)
+    for n in 1:nterms
+        q = mul(q, ratio)
+        q == 0 && break
+        ratio = mul(ratio, step)
+        μ = n * μ₁
+        term = mul(quo(2μ, mul(Lₚ, γ² + mul(μ, μ))), mul(q, sₙ))
+        series += iseven(n) ? term : -term
+        sₙ₋₁, sₙ = sₙ, mul(2cosθ, sₙ) - sₙ₋₁
+    end
+    transient = mul(mul(fixedexp(mul(γₚ, Lₚ - zₚ), p), fixedexp(-mul(kt, γ²), p)), series)
+    total = steady + transient
+    shift = max(ndigits(abs(total); base = 2) - 64, 0)
+    return ldexp(Float64(total >> shift), shift - p)
 end
 
 """
@@ -462,10 +500,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     end
 
     # The terms are bounded by e^{γ(L-z) - kμₙ²t}, so truncate where that is below e^{-40}.
-    function transient(k, γ, t, z)
-        Lₜ = one(γ) * L
-        πₜ = π * one(γ)
-        # The term count only needs Float64.
+    function seriesterms(k, γ, t, z)
         reach = 40 + max(Float64(γ) * (L - Float64(z)), 0)
         nterms = L / π * sqrt(reach / (Float64(k) * Float64(t)))
         nterms <= maxiters || throw(
@@ -475,8 +510,14 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
                     "use t ≥ $(L^2 * reach / (π^2 * maxiters^2 * Float64(k)))"
             )
         )
-        return sum(1:ceil(Int, nterms)) do n
-            μ = n * πₜ / Lₜ
+        return ceil(Int, nterms)
+    end
+
+    function transient(k, γ, t, z)
+        T = typeof(γ)
+        Lₜ = T(L)
+        return sum(1:seriesterms(k, γ, t, z)) do n
+            μ = n * T(π) / Lₜ
             2μ * (-1)^n * exp(γ * (Lₜ - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
                 (Lₜ * (γ^2 + μ^2))
         end
@@ -488,11 +529,7 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         t == 0 && return f_0(z)
         # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
         # carry enough extra bits to survive the cancellation.
-        if γ * L > 1
-            bits = 64 + ceil(Int, 3γ * L)
-            big_(x) = ExtFloat(x, bits)
-            return Float64(steady(big_(γ), big_(z)) + transient(big_(k), big_(γ), big_(t), big_(z)))
-        end
+        γ * L > 1 && return convdiff_fixed(L, k, γ, t, z, seriesterms(k, γ, t, z))
         return steady(γ, z) + transient(k, γ, t, z)
     end
 

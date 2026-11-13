@@ -56,6 +56,34 @@ using Test
     end
 end
 
+# BigFloat series at explicit precision: a serial, test-only reference for the fixed-point path.
+function bigfloat_reference(L, k, v, t, z)
+    return setprecision(BigFloat, 600) do
+        L, k, γ, t, z = big(L), big(k), big(v) / 2big(k), big(t), big(z)
+        nterms = ceil(Int, L / π * sqrt((40 + γ * (L - z)) / (k * t)))
+        series = sum(1:nterms) do n
+            μ = n * big(π) / L
+            2μ * (-1)^n * exp(γ * (L - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) / (L * (γ^2 + μ^2))
+        end
+        Float64(expm1(-2γ * z) / expm1(-2γ * L) + series)
+    end
+end
+
+@testset "convection_diffusion fixed-point path matches a BigFloat reference" begin
+    systems = get_pdesys_with_tags(String[])
+    analytic(name) = only(values(only(filter(system -> system.name == name, systems)).analytic_func))
+    # (L, k, v, t, z): γL = 10, 20, 40 and 400.
+    cases = (
+        (10.0, 1.0, 2.0, 1.0e-2, 4.0), (10.0, 0.5, 2.0, 1.0e-2, 9.0),
+        (10.0, 0.5, 4.0, 1.0e-3, 5.0), (1.0, 0.01, 8.0, 1.0e-3, 0.5),
+        (1.0, 0.01, 8.0, 1.0e-6, 0.5), (10.0, 0.5, 3.0, 5.0e-7, 5.0),
+    )
+    for (L, k, v, t, z) in cases
+        value = PDESystemLibrary.convdiff_fixed(L, k, v / 2k, t, z, ceil(Int, L / π * sqrt((40 + v / 2k * (L - z)) / (k * t))))
+        @test abs(value - bigfloat_reference(L, k, v, t, z)) <= 1.0e-14
+    end
+end
+
 # On Julia 1.10 setprecision(BigFloat, ...) is process-wide and BigFloat operations read it, so the
 # high-precision path must neither change the ambient precision nor depend on it.
 @testset "convection_diffusion is independent of the global BigFloat precision" begin
@@ -78,10 +106,11 @@ end
     @test u1(args1[1], BigFloat(args1[2]), Float32(args1[3])) == serial1
     @test u1(Float32.(args1[1]), args1[2], args1[3]) isa Float64
 
-    # Non-Float64 domain lengths work too.
-    for L in (Float32(1), big"1.0")
-        system = PDESystemLibrary.convection_diffusion(L, [0.01, 8.0])
-        @test only(values(system.analytic_func))([0.01, 8.0], 1.0e-3, 0.5) isa Float64
+    # Any real domain length gives the Float64-length result.
+    analytic_for(L) = only(values(PDESystemLibrary.convection_diffusion(L, [0.01, 8.0]).analytic_func))
+    expected = analytic_for(1.0)([0.01, 8.0], 1.0e-3, 0.5)
+    for L in (Int32(1), 1 // 1, Float32(1), big"1.0")
+        @test analytic_for(L)([0.01, 8.0], 1.0e-3, 0.5) == expected
     end
 
     # Unrelated BigFloat arithmetic that needs the ambient precision stays exact during an evaluation.
