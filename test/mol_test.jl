@@ -13,6 +13,7 @@ N = 100
 const EXAMPLE_ALGORITHMS = Dict(:adv3 => TRBDF2(), :advdiff3 => Rodas5P())
 
 for ex in PSL.all_systems
+    "MeshDomain" in ex.metadata && continue # MOL only discretizes interval and box domains
     @testset "Example: $(ex.name)" begin
         # MethodOfLines' stationary 2D path currently returns `Stalled` from NewtonRaphson, even
         # for its own `u = x*y` Laplace example, so steady systems are only checked analytically.
