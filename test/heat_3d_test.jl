@@ -7,6 +7,7 @@ using Symbolics
     system = only(get_pdesys_with_tags(["3D", "Heat", "Dirichlet"]))
     @test system.name == :heat_3d
     kval = only(system.ps)[2]
+    @test kval == 0.1  # documented default diffusivity
     analytic = only(values(system.analytic_func))
     u(t, x, y, z) = analytic([kval], t, x, y, z)
 
@@ -30,7 +31,8 @@ using Symbolics
     end
 
     t_end = DomainSets.supremum(system.domain[1].domain)
-    @test u(t_end, 0.5, 0.5, 0.5) > 0.1
+    # Centre value is exp(-3pi^2 k t_end) * sin(pi/2)^3, the documented lowest mode decay.
+    @test u(t_end, 0.5, 0.5, 0.5) ≈ exp(-3pi^2 * 0.1 * t_end) rtol = 1.0e-12
 
     # The stored equation and boundary conditions are satisfied by the exact solution.
     t, x, y, z = system.ivs
@@ -50,14 +52,28 @@ using Symbolics
         @test abs(Symbolics.value(substitute(pde_res, vals; fold = Val(true)))) < 1.0e-8
     end
 
+    # A trial field with different second derivatives per axis, v = exp(-t) sin(pi x) sin(2pi y) sin(3pi z),
+    # has Dt(v) = -v and (Dxx + Dyy + Dzz)(v) = -14pi^2 v, so the stored equation's residual is
+    # (-1 + 14pi^2 k) v only if each axis carries weight exactly 1.
+    v = exp(-t) * sin(pi * x) * sin(2pi * y) * sin(3pi * z)
+    trial_derivs = Dict(d(u_sym) => Symbolics.expand_derivatives(d(v)) for d in (Dt, Dx^2, Dy^2, Dz^2))
+    trial_res = substitute(pde.lhs - pde.rhs, trial_derivs)
+    for (tv, xv, yv, zv) in samples
+        vals = merge(pmap, Dict(t => tv, x => xv, y => yv, z => zv))
+        vval = exp(-tv) * sin(pi * xv) * sin(2pi * yv) * sin(3pi * zv)
+        @test Symbolics.value(substitute(trial_res, vals; fold = Val(true))) ≈ (-1 + 14pi^2 * kval) * vval atol = 1.0e-10
+    end
+
     # Each boundary condition sits on the initial time or one end of an x, y or z interval,
     # and its right-hand side matches the exact solution there.
     doms = Dict(string(d.variables) => d.domain for d in system.domain)
     ends = [(DomainSets.infimum(doms[v]), DomainSets.supremum(doms[v])) for v in ("x", "y", "z")]
     @test length(system.bcs) == 7
+    signatures = Vector{Vector{Tuple{Int, Float64}}}()
     for bc in system.bcs
         args = Symbolics.arguments(Symbolics.unwrap(bc.lhs))
         fixed = [isempty(Symbolics.get_variables(a)) ? Symbolics.value(a) : nothing for a in args]
+        push!(signatures, [(i, Float64(f)) for (i, f) in enumerate(fixed) if f !== nothing])
         @test fixed[1] == DomainSets.infimum(doms["t"]) ||
             any(i -> fixed[i + 1] in ends[i], 1:3)
         for (tv, xv, yv, zv) in samples
@@ -66,4 +82,8 @@ using Symbolics
             @test abs(rhs - u(coords...)) < 1.0e-12
         end
     end
+    # The initial plane and each of the six faces appear exactly once.
+    t0 = DomainSets.infimum(doms["t"])
+    expected = vcat([[(1, Float64(t0))]], [[(i + 1, Float64(e))] for i in 1:3 for e in ends[i]])
+    @test Set(signatures) == Set(expected)
 end
