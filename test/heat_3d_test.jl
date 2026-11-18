@@ -52,16 +52,19 @@ using Symbolics
         @test abs(Symbolics.value(substitute(pde_res, vals; fold = Val(true)))) < 1.0e-8
     end
 
-    # A trial field with different second derivatives per axis, v = exp(-t) sin(pi x) sin(2pi y) sin(3pi z),
-    # has Dt(v) = -v and (Dxx + Dyy + Dzz)(v) = -14pi^2 v, so the stored equation's residual is
-    # (-1 + 14pi^2 k) v only if each axis carries weight exactly 1.
-    v = exp(-t) * sin(pi * x) * sin(2pi * y) * sin(3pi * z)
-    trial_derivs = Dict(d(u_sym) => Symbolics.expand_derivatives(d(v)) for d in (Dt, Dx^2, Dy^2, Dz^2))
-    trial_res = substitute(pde.lhs - pde.rhs, trial_derivs)
-    for (tv, xv, yv, zv) in samples
-        vals = merge(pmap, Dict(t => tv, x => xv, y => yv, z => zv))
-        vval = exp(-tv) * sin(pi * xv) * sin(2pi * yv) * sin(3pi * zv)
-        @test Symbolics.value(substitute(trial_res, vals; fold = Val(true))) ≈ (-1 + 14pi^2 * kval) * vval atol = 1.0e-10
+    # Trial fields v = exp(-t) sin(a pi x) sin(b pi y) sin(c pi z) have Dt(v) = -v and
+    # (Dxx + Dyy + Dzz)(v) = -(a^2 + b^2 + c^2) pi^2 v, so the stored residual is
+    # (-1 + (a^2 + b^2 + c^2) pi^2 k) v only if each axis carries weight exactly 1. The three
+    # frequency triples have linearly independent squares, which pins all three weights.
+    for (a, b, c) in ((1, 2, 3), (2, 1, 1), (1, 1, 2))
+        trial = exp(-t) * sin(a * pi * x) * sin(b * pi * y) * sin(c * pi * z)
+        trial_derivs = Dict(d(u_sym) => Symbolics.expand_derivatives(d(trial)) for d in (Dt, Dx^2, Dy^2, Dz^2))
+        trial_res = substitute(pde.lhs - pde.rhs, trial_derivs)
+        for (tv, xv, yv, zv) in samples
+            vals = merge(pmap, Dict(t => tv, x => xv, y => yv, z => zv))
+            vval = exp(-tv) * sin(a * pi * xv) * sin(b * pi * yv) * sin(c * pi * zv)
+            @test Symbolics.value(substitute(trial_res, vals; fold = Val(true))) ≈ (-1 + (a^2 + b^2 + c^2) * pi^2 * kval) * vval atol = 1.0e-10
+        end
     end
 
     # Each boundary condition sits on the initial time or one end of an x, y or z interval,
@@ -74,6 +77,8 @@ using Symbolics
         args = Symbolics.arguments(Symbolics.unwrap(bc.lhs))
         fixed = [isempty(Symbolics.get_variables(a)) ? Symbolics.value(a) : nothing for a in args]
         push!(signatures, [(i, Float64(f)) for (i, f) in enumerate(fixed) if f !== nothing])
+        # Every argument that is not fixed is its own independent variable, so the whole face is constrained.
+        @test isequal(args[isnothing.(fixed)], Symbolics.unwrap.(system.ivs)[isnothing.(fixed)])
         @test fixed[1] == DomainSets.infimum(doms["t"]) ||
             any(i -> fixed[i + 1] in ends[i], 1:3)
         for (tv, xv, yv, zv) in samples
