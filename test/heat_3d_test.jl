@@ -31,6 +31,8 @@ using Symbolics
     end
 
     t_end = DomainSets.supremum(system.domain[1].domain)
+    @test t_end == 0.5  # documented final time
+    @test analytic([0.2], t_end, 0.5, 0.5, 0.5) ≈ exp(-3pi^2 * 0.2 * t_end) rtol = 1.0e-12  # k is read from the parameter
     # Centre value is exp(-3pi^2 k t_end) * sin(pi/2)^3, the documented lowest mode decay.
     @test u(t_end, 0.5, 0.5, 0.5) ≈ exp(-3pi^2 * 0.1 * t_end) rtol = 1.0e-12
 
