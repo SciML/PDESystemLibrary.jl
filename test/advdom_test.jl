@@ -55,11 +55,15 @@ using Symbolics
         bc_vals = Float64[]
         bc_points = Tuple[]
         for bc in sys.bcs
+            @test isequal(Symbolics.operation(Symbolics.unwrap(bc.lhs)), Symbolics.operation(Symbolics.unwrap(u_sym)))
             args = Symbolics.arguments(Symbolics.unwrap(bc.lhs))
-            # A coordinate is fixed (a number) or free (still a variable); free ones are swept below.
+            # A coordinate is fixed (a number) or free (still a variable); free ones are swept over the whole domain.
             fixed = [isempty(Symbolics.get_variables(a)) ? Symbolics.value(a) : nothing for a in args]
             push!(bc_points, Tuple(fixed))
-            for s in range(0.0, 0.5; length = 5)  # each boundary coordinate is either fixed or swept
+            sweeps = (ts, range(DomainSets.infimum(xdom), DomainSets.supremum(xdom); length = 41))
+            free = findall(isnothing, fixed)
+            @test length(free) == 1
+            for s in sweeps[only(free)]
                 tv, xv = [Symbolics.value(substitute(a, Dict(t => s, x => s); fold = Val(true))) for a in args]
                 rhs = Symbolics.value(substitute(bc.rhs, merge(pmap, Dict(t => tv, x => xv)); fold = Val(true)))
                 push!(bc_vals, rhs - analytic(ps, tv, xv))
@@ -70,8 +74,9 @@ using Symbolics
     pde_vals, bc_vals, bc_points = stored_residuals(system)
     @test maximum(abs, pde_vals) < 1.0e-8
     @test maximum(abs, bc_vals) < 1.0e-12
-    # Each boundary condition sits on the initial time or one end of the x domain.
-    @test all(bc_points) do (tv, xv)
-        tv == DomainSets.infimum(tdom) || xv in (DomainSets.infimum(xdom), DomainSets.supremum(xdom))
+    # Exactly one condition on each of the initial profile and the two ends of the x domain.
+    @test length(system.bcs) == 3
+    for expected in [(0.0, nothing), (nothing, 0.0), (nothing, 1.0)]
+        @test count(==(expected), bc_points) == 1
     end
 end
