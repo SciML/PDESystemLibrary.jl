@@ -1,3 +1,31 @@
+function _heat_1d1_system(name, t_end, extra_tags)
+    @parameters x t D
+    @variables u(..)
+
+    Dxx = Differential(x)^2
+    Dt = Differential(t)
+
+    eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
+    bcs = [
+        u(0, x) ~ sin(2pi * x),
+        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0,
+    ]
+
+    domains = [
+        t ∈ Interval(0.0, t_end),
+        x ∈ Interval(0.0, 1.0),
+    ]
+
+    analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
+
+    tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat", extra_tags...]
+
+    return PDESystem(
+        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
+        analytic = analytic, analytic_func = analytic_funcs(analytic, [D => 1.0]), metadata = tags, eval_module = @__MODULE__, name = name
+    )
+end
+
 """
 # The Heat Equation in 1D with Dirichlet Boundary Conditions.
 
@@ -12,33 +40,7 @@ The equation is given by:
 ```
 """
 function heat_1d1()
-    @parameters x t D
-    @variables u(..)
-
-    Dxx = Differential(x)^2
-    Dt = Differential(t)
-
-    eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
-    bcs = [
-        u(0, x) ~ sin(2pi * x),
-        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0,
-    ]
-
-    domains = [
-        t ∈ Interval(0.0, 1.0),
-        x ∈ Interval(0.0, 1.0),
-    ]
-
-    analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
-
-    tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat"]
-
-    @named heat_1d1 = PDESystem(
-        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
-        analytic = analytic, analytic_func = analytic_funcs(analytic, [D => 1.0]), metadata = tags, eval_module = @__MODULE__
-    )
-
-    return heat_1d1
+    return _heat_1d1_system(:heat_1d1, 1.0, String[])
 end
 push!(all_systems, heat_1d1())
 
@@ -52,33 +54,7 @@ cannot discriminate between solvers at its final time. Here the solution at the 
 0.14 of the initial amplitude, which makes it usable as an accuracy benchmark.
 """
 function heat_1d1_short()
-    @parameters x t D
-    @variables u(..)
-
-    Dxx = Differential(x)^2
-    Dt = Differential(t)
-
-    eqs = [Dt(u(t, x)) ~ D * Dxx(u(t, x))]
-    bcs = [
-        u(0, x) ~ sin(2pi * x),
-        u(t, 0) ~ 0.0, u(t, 1) ~ 0.0,
-    ]
-
-    domains = [
-        t ∈ Interval(0.0, 0.05),
-        x ∈ Interval(0.0, 1.0),
-    ]
-
-    analytic = [u(t, x) ~ exp(-4pi^2 * D * t) * sin(2pi * x)]
-
-    tags = ["1D", "Dirichlet", "Linear", "Diffusion", "Heat", "ShortTime"]
-
-    @named heat_1d1_short = PDESystem(
-        eqs, bcs, domains, [t, x], [u(t, x)], [D => 1.0],
-        analytic = analytic, analytic_func = analytic_funcs(analytic, [D => 1.0]), metadata = tags, eval_module = @__MODULE__
-    )
-
-    return heat_1d1_short
+    return _heat_1d1_system(:heat_1d1_short, 0.05, ["ShortTime"])
 end
 push!(all_systems, heat_1d1_short())
 
