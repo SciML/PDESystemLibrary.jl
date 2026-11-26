@@ -108,9 +108,9 @@ function brusselator_2d()
     p = (3.4, 1.0, 10.0, step(xyd_brusselator))
 
     function init_brusselator_2d(xyd)
-        N = length(xyd)
-        ud = zeros(N, N, 2)
-        for I in CartesianIndices((N, N))
+        n = length(xyd)
+        ud = zeros(n, n, 2)
+        for I in CartesianIndices((n, n))
             xd = xyd[I[1]]
             yd = xyd[I[2]]
             ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
