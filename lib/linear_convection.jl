@@ -416,21 +416,31 @@ function fixedpi(p)  # Machin: 16 atan(1/5) - 4 atan(1/239)
     return 16 * ataninv(5) - 4 * ataninv(239)
 end
 
+function tofloat(total, p)
+    shift = max(ndigits(abs(total); base = 2) - 64, 0)
+    return ldexp(Float64(total >> shift), shift - p)
+end
+
 # steady + transient of the convection_diffusion solution (see there) for γ > 0, in fixed point
-# with 64 + ⌈3γL⌉ bits plus 64 guard bits; the series is summed with the recurrences
+# with 128 + ⌈3γL⌉ bits. The solution is scale invariant, u(L, k, γ, t, z) = u(1, k t / L², γL, 1, z / L),
+# so it is evaluated in those dimensionless variables, which keeps every operand well inside the fixed-point
+# range whatever the units. The series is summed with the recurrences
 # e^{-k t μₙ²} = e^{-k t μ₁²n²} and sin(nθ) = 2cos(θ) sin((n-1)θ) - sin((n-2)θ).
 function convdiff_fixed(L, k, γ, t, z, nterms)
     L, k, γ, t, z = Float64.((L, k, γ, t, z))
-    p = 128 + ceil(Int, 3γ * L)
+    γL = γ * L
+    p = 128 + ceil(Int, 3γL)
     one_ = BigInt(1) << p
     mul(a, b) = (a * b) >> p
     quo(a, b) = div(a << p, b)
-    Lₚ, kₚ, γₚ, tₚ, zₚ = fixed.((L, k, γ, t, z), p)
-    steady = quo(one_ - fixedexp(-2mul(γₚ, zₚ), p), one_ - fixedexp(-2mul(γₚ, Lₚ), p))
-    μ₁ = quo(fixedpi(p), Lₚ)
+    γₚ, zₚ = fixed.((γL, z / L), p)
+    steady = quo(one_ - fixedexp(-2mul(γₚ, zₚ), p), one_ - fixedexp(-2γₚ, p))
+    # No terms are needed once e^{-k t μ₁²} has underflowed (k t / L² can overflow Float64).
+    nterms == 0 && return tofloat(steady, p)
+    kt = fixed((k / L) * (t / L), p)
+    μ₁ = fixedpi(p)
     sinθ, cosθ = fixedsincos(mul(μ₁, zₚ), p)
     γ² = mul(γₚ, γₚ)
-    kt = mul(kₚ, tₚ)
     decay = fixedexp(-mul(kt, mul(μ₁, μ₁)), p)  # e^{-k t μ₁²}
     q, ratio, step = one_, decay, mul(decay, decay)
     sₙ₋₁, sₙ = BigInt(0), sinθ
@@ -440,14 +450,12 @@ function convdiff_fixed(L, k, γ, t, z, nterms)
         q == 0 && break
         ratio = mul(ratio, step)
         μ = n * μ₁
-        term = mul(quo(2μ, mul(Lₚ, γ² + mul(μ, μ))), mul(q, sₙ))
+        term = mul(quo(2μ, γ² + mul(μ, μ)), mul(q, sₙ))
         series += iseven(n) ? term : -term
         sₙ₋₁, sₙ = sₙ, mul(2cosθ, sₙ) - sₙ₋₁
     end
-    transient = mul(mul(fixedexp(mul(γₚ, Lₚ - zₚ), p), fixedexp(-mul(kt, γ²), p)), series)
-    total = steady + transient
-    shift = max(ndigits(abs(total); base = 2) - 64, 0)
-    return ldexp(Float64(total >> shift), shift - p)
+    transient = mul(mul(fixedexp(mul(γₚ, one_ - zₚ), p), fixedexp(-mul(kt, γ²), p)), series)
+    return tofloat(steady + transient, p)
 end
 
 """
@@ -496,45 +504,50 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
     # w = Σₙ 2μₙ(-1)ⁿ e^{γ(L-z) - k(γ²+μₙ²)t} sin(μₙz) / (L(γ²+μₙ²))
     # solves the homogeneous problem with initial data -fₛ.
     maxiters = 50_000
+    # Any real length is evaluated as a Float64, so no BigFloat or Rational arithmetic is involved.
+    Lf = Float64(L)
 
-    function steady(γ, z)
-        # Rewritten for γ < 0 so no exponential exceeds 1.
-        return γ < 0 ? exp(-2γ * (z - L)) * expm1(2γ * z) / expm1(2γ * L) :
-            γ == 0 ? z / L : expm1(-2γ * z) / expm1(-2γ * L)
+    # The solution depends only on γL, kt/L² and z/L, so everything below is evaluated in the
+    # dimensionless variables γ̂ = γL, τ = kt/L² and ξ = z/L, which cannot overflow or underflow with the units.
+    function steady(γ̂, ξ)
+        # Rewritten for γ̂ < 0 so no exponential exceeds 1.
+        return γ̂ < 0 ? exp(-2γ̂ * (ξ - 1)) * expm1(2γ̂ * ξ) / expm1(2γ̂) :
+            γ̂ == 0 ? ξ : expm1(-2γ̂ * ξ) / expm1(-2γ̂)
     end
 
-    # The terms are bounded by e^{γ(L-z) - kμₙ²t}, so truncate where that is below e^{-40}.
-    function seriesterms(k, γ, t, z)
-        reach = 40 + max(Float64(γ) * (L - Float64(z)), 0)
-        nterms = L / π * sqrt(reach / (Float64(k) * Float64(t)))
+    # The terms are bounded by e^{γ̂(1-ξ) - τ(nπ)²}, so truncate where that is below e^{-40}.
+    function seriesterms(k, t, z, γ̂)
+        reach = 40 + max(γ̂ * (1 - z / Lf), 0)
+        nterms = sqrt(reach / ((k / Lf) * (t / Lf))) / π
         nterms <= maxiters || throw(
             ArgumentError(
-                "convection_diffusion analytic solution needs ≈$(round(Float64(nterms))) series terms at " *
-                    "t = $(Float64(t)), z = $(Float64(z)) but is limited to $maxiters; " *
-                    "use t ≥ $(L^2 * reach / (π^2 * maxiters^2 * Float64(k)))"
+                "convection_diffusion analytic solution needs ≈$(round(nterms)) series terms at " *
+                    "t = $t, z = $z but is limited to $maxiters; " *
+                    "use t ≥ $(Lf / k * (Lf * reach / (π^2 * Float64(maxiters)^2)))"
             )
         )
         return ceil(Int, nterms)
     end
 
-    function transient(k, γ, t, z)
-        T = typeof(γ)
-        Lₜ = T(L)
-        return sum(1:seriesterms(k, γ, t, z)) do n
-            μ = n * T(π) / Lₜ
-            2μ * (-1)^n * exp(γ * (Lₜ - z) - k * (γ^2 + μ^2) * t) * sin(μ * z) /
-                (Lₜ * (γ^2 + μ^2))
+    function transient(τ, γ̂, ξ, nterms)
+        return sum(1:nterms; init = 0.0) do n
+            μ = n * π
+            2μ * (-1)^n * exp(γ̂ * (1 - ξ) - (γ̂^2 + μ^2) * τ) * sin(μ * ξ) / (γ̂^2 + μ^2)
         end
     end
 
     function u(ps, t, z)
-        k = ps[1]
-        γ = ps[2] / 2k
         t == 0 && return f_0(z)
-        # For γ > 0 the terms are of size e^{γL} while the sum is O(1), so
+        k, v, t, z = Float64.((ps[1], ps[2], t, z))
+        # The boundary values are prescribed; no series is needed for them.
+        z == 0 && return 0.0
+        z == Lf && return 1.0
+        γ̂ = (v / k) * (Lf / 2)
+        nterms = seriesterms(k, t, z, γ̂)
+        # For γ̂ > 1 the terms are of size e^{γ̂} while the sum is O(1), so
         # carry enough extra bits to survive the cancellation.
-        γ * L > 1 && return convdiff_fixed(L, k, γ, t, z, seriesterms(k, γ, t, z))
-        return steady(γ, z) + transient(k, γ, t, z)
+        γ̂ > 1 && return convdiff_fixed(1.0, 1.0, γ̂, (k / Lf) * (t / Lf), z / Lf, nterms)
+        return steady(γ̂, z / Lf) + transient((k / Lf) * (t / Lf), γ̂, z / Lf, nterms)
     end
 
     ref = [f(t, z) => u]

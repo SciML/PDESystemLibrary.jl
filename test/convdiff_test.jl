@@ -48,6 +48,17 @@ using Test
         end
         # Too small t is a loud failure, never a silently truncated series.
         @test_throws ArgumentError analytic(ps, 1.0e-40, L - 1.0e-5)
+        # The reported minimum t is positive (Int32 arithmetic on 32-bit Julia once made it negative)
+        # and a little above it the series fits within the term limit.
+        error = try
+            analytic(ps, 1.0e-40, L - 1.0e-5)
+        catch err
+            err
+        end
+        tmin = parse(Float64, match(r"t ≥ (\S+)", error.msg)[1])
+        @test tmin > 0
+        @test isfinite(analytic(ps, 1.01tmin, L - 1.0e-5))
+        @test_throws ArgumentError analytic(ps, 0.9tmin, L - 1.0e-5)
         # Long-time limit is the steady state (1 - e^{-vz/k}) / (1 - e^{-vL/k}).
         a = -ps[2] / ps[1]
         steady(z) = expm1(a * z) / expm1(a * L)
@@ -70,22 +81,67 @@ function bigfloat_reference(L, k, v, t, z)
 end
 
 @testset "convection_diffusion fixed-point path matches a BigFloat reference" begin
-    systems = get_pdesys_with_tags(String[])
-    analytic(name) = only(values(only(filter(system -> system.name == name, systems)).analytic_func))
-    # (L, k, v, t, z): γL = 10, 20, 40 and 400.
-    cases = (
+    # (L, k, v, t, z): γL = 10, 20, 40 and 400, where the solution is below 1e-20 (so these only
+    # check that the cancelling terms do not blow up).
+    tiny = (
         (10.0, 1.0, 2.0, 1.0e-2, 4.0), (10.0, 0.5, 2.0, 1.0e-2, 9.0),
         (10.0, 0.5, 4.0, 1.0e-3, 5.0), (1.0, 0.01, 8.0, 1.0e-3, 0.5),
         (1.0, 0.01, 8.0, 1.0e-6, 0.5), (10.0, 0.5, 3.0, 5.0e-7, 5.0),
     )
-    for (L, k, v, t, z) in cases
-        value = PDESystemLibrary.convdiff_fixed(L, k, v / 2k, t, z, ceil(Int, L / π * sqrt((40 + v / 2k * (L - z)) / (k * t))))
-        @test abs(value - bigfloat_reference(L, k, v, t, z)) <= 1.0e-14
+    # Points inside the advection front or boundary layer, with γL = 20, 30, 50 and 400, where the
+    # solution is materially nonzero so that a stub returning 0.0 fails. The fixed-point path agrees
+    # with the 600-bit reference to about 3e-16 here; 1e-13 leaves margin for libm differences.
+    layer = (
+        (10.0, 0.5, 2.0, 1.0, 9.9), (10.0, 0.5, 3.0, 0.5, 9.0), (10.0, 0.5, 3.0, 0.5, 9.9),
+        (10.0, 0.1, 1.0, 1.0, 9.0), (10.0, 0.1, 1.0, 0.5, 9.5), (10.0, 0.1, 1.0, 1.0, 9.9),
+        (1.0, 0.01, 8.0, 0.05, 0.6), (1.0, 0.01, 8.0, 0.05, 0.995), (1.0, 0.01, 8.0, 0.01, 0.92),
+    )
+    for (L, k, v, t, z) in (tiny..., layer...)
+        nterms = ceil(Int, L / π * sqrt((40 + v / 2k * (L - z)) / (k * t)))
+        value = PDESystemLibrary.convdiff_fixed(L, k, v / 2k, t, z, nterms)
+        reference = bigfloat_reference(L, k, v, t, z)
+        (L, k, v, t, z) in layer && @test abs(reference) > 1.0e-3
+        @test abs(value - reference) <= 1.0e-13
     end
+end
+
+# The solution depends only on γL, kt/L² and z/L, so changing units must not change it.
+@testset "convection_diffusion is invariant under unit rescaling" begin
+    exact = 0.22344551218000175  # γL = 1.5, kt/L² = 0.05, z/L = 0.5
+    for α in (1.0e-21, 1.0e-10, 1.0, 1.0e10, 1.0e20, 1.0e21)
+        # (L, z, k, v) = (α, α/2, α², 3α) at t = 0.05
+        u = only(values(PDESystemLibrary.convection_diffusion(α, [α^2, 3α]).analytic_func))
+        @test u([α^2, 3α], 0.05, 0.5α) ≈ exact atol = 1.0e-12
+    end
+    # Float64 extremes: the series cap must not overflow in k t.
+    u = only(values(PDESystemLibrary.convection_diffusion(1.0e-155, [1.0e-310, 3.0e-155]).analytic_func))
+    @test u([1.0e-310, 3.0e-155], 0.05, 0.5e-155) ≈ exact atol = 1.0e-12
+    # γ = 0, so the Float64 branch: the eigenvalues μₙ² overflow dimensionally but not in kt/L².
+    u = only(values(PDESystemLibrary.convection_diffusion(1.0e-155, [1.0e-310, 0.0]).analytic_func))
+    u1 = only(values(PDESystemLibrary.convection_diffusion(1.0, [0.05, 0.0]).analytic_func))
+    @test u([1.0e-310, 0.0], 0.05, 0.5e-155) ≈ u1([0.05, 0.0], 1.0, 0.5) atol = 1.0e-12
+    @test u1([0.05, 0.0], 1.0, 0.5) ≈ 0.1138441966 atol = 1.0e-9
+    # k t / L² overflows Float64: the steady state (1 - e^{-2}) / (1 - e^{-4}) is reached, with no series terms.
+    u = only(values(PDESystemLibrary.convection_diffusion(1.0e-150, [1.0e10, 4.0e160]).analytic_func))
+    @test u([1.0e10, 4.0e160], 1.0, 0.5e-150) ≈ 0.880797077977882 atol = 1.0e-12
+    # Used to return -0.0666 because k and t underflowed in fixed point.
+    u = only(values(PDESystemLibrary.convection_diffusion(1.0e-21, [1.0e-42, 3.0e-21]).analytic_func))
+    @test u([1.0e-42, 3.0e-21], 0.05, 0.5e-21) ≈ exact atol = 1.0e-12
 end
 
 # On Julia 1.10 setprecision(BigFloat, ...) is process-wide and BigFloat operations read it, so the
 # high-precision path must neither change the ambient precision nor depend on it.
+@testset "convection_diffusion boundary and initial values are exact" begin
+    u = only(values(PDESystemLibrary.convection_diffusion(1.0, [0.01, 1.0]).analytic_func))
+    # The Dirichlet values hold at every t > 0, even below the series' minimum t.
+    @test u([0.01, 1.0], 1.0e-40, 1.0) == 1.0
+    @test u([0.01, 1.0], 1.0e-40, 0.0) == 0.0
+    # The initial condition compares the coordinate with L before any conversion to Float64.
+    ur = only(values(PDESystemLibrary.convection_diffusion(1 // 10, [1.0, 0.0]).analytic_func))
+    @test ur([1.0, 0.0], 0.0, 1 // 10) == 1.0
+    @test ur([1.0, 0.0], 0.0, 1 // 20) == 0.0
+end
+
 @testset "convection_diffusion is independent of the global BigFloat precision" begin
     systems = get_pdesys_with_tags(String[])
     analytic(name) = only(values(only(filter(system -> system.name == name, systems)).analytic_func))
@@ -113,6 +169,21 @@ end
         @test analytic_for(L)([0.01, 8.0], 1.0e-3, 0.5) == expected
     end
 
+    # The γL <= 1 branch returns Float64 for any real length or parameters, matching the Float64 length.
+    smallps = [1.0, -1.0]
+    expected_small = analytic_for(5.0)(smallps, 2.0, 2.5)
+    @test expected_small isa Float64
+    for L in (big"5.0", Float32(5), Int32(5), 5 // 1)
+        result = analytic_for(L)(smallps, 2.0, 2.5)
+        @test result isa Float64
+        @test result == expected_small
+    end
+    for ps in ([1 // 1, -1 // 1], [big"1.0", big"-1.0"], Float32[1, -1])
+        result = analytic_for(5.0)(ps, 2.0, 2.5)
+        @test result isa Float64
+        @test result == expected_small
+    end
+
     # Unrelated BigFloat arithmetic that needs the ambient precision stays exact during an evaluation.
     evaluation = Threads.@spawn u4(args4...)
     exact = true
@@ -135,9 +206,13 @@ end
         setprecision(() -> BigFloat(3)^100, BigFloat, 64)
         yield()
     end
+    ubig = analytic_for(big"5.0")  # γL <= 1 branch with a BigFloat length
     results = [u1(args1...), u4(args4...), u1(args1...)]
+    smallresults = [ubig(smallps, 2.0, 2.5) for _ in 1:200]
     stop[] = true
     wait(toggler)
     @test results == [serial1, serial4, serial1]
+    @test all(==(expected_small), smallresults)
+    @test all(r -> r isa Float64, smallresults)
     @test precision(BigFloat) == ambient
 end
