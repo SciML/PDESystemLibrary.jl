@@ -1,8 +1,8 @@
 using PDESystemLibrary
 using Test
 
-# Reference values of the interpolated TRBDF2 solution, recorded from master before the
-# the fix that stopped init_brusselator_2d from boxing N in brusselator_2d_loop (runtime only, not the numbers).
+# Reference values of the interpolated TRBDF2 solution, recorded from master before
+# init_brusselator_2d stopped boxing N in brusselator_2d_loop (a runtime fix, not a numerical one).
 @testset "brusselator_2d reference solution" begin
     system = PDESystemLibrary.brusselator_2d()
     analytic = Dict(string(k) => f for (k, f) in system.analytic_func)
