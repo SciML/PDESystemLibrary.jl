@@ -8,7 +8,10 @@ using Symbolics
     @test system.name == :heat_3d
     kval = only(system.ps)[2]
     @test kval == 0.1  # documented default diffusivity
-    analytic = only(values(system.analytic_func))
+    u_sym = only(system.dvs)
+    @test isequal(only(system.analytic).lhs, u_sym)
+    @test haskey(system.analytic_func, u_sym)
+    analytic = system.analytic_func[u_sym]
     u(t, x, y, z) = analytic([kval], t, x, y, z)
 
     # Residual of Dt(u) - k*(Dxx+Dyy+Dzz)(u) by central differences (O(h^2) error).
@@ -39,7 +42,6 @@ using Symbolics
     # The stored equation and boundary conditions are satisfied by the exact solution.
     t, x, y, z = system.ivs
     pmap = Dict(first(p) => last(p) for p in system.ps)
-    u_sym = only(system.dvs)
     exact = only(system.analytic).rhs
     pde = only(system.eqs)
     Dt, Dx, Dy, Dz = Differential(t), Differential(x), Differential(y), Differential(z)
@@ -100,4 +102,12 @@ using Symbolics
     t0 = DomainSets.infimum(doms["t"])
     expected = vcat([[(1, Float64(t0))]], [[(i + 1, Float64(e))] for i in 1:3 for e in ends[i]])
     @test Set(signatures) == Set(expected)
+
+    # The initial profile is the lowest mode and the analytic solution is its exact decay, both
+    # compared with an independently written phi so that no higher mode can hide.
+    phi = sin(pi * x) * sin(pi * y) * sin(pi * z)
+    initial_rhs = only(system.bcs[findall(==([(1, 0.0)]), signatures)]).rhs
+    is_zero(difference) = isequal(Symbolics.value(simplify(difference)), 0)
+    @test is_zero(initial_rhs - phi)
+    @test is_zero(exact - exp(-3pi^2 * k_sym * t) * phi)
 end
