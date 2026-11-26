@@ -63,6 +63,8 @@ using Symbolics
             sweeps = (ts, range(DomainSets.infimum(xdom), DomainSets.supremum(xdom); length = 41))
             free = findall(isnothing, fixed)
             @test length(free) == 1
+            # The free argument is the bare coordinate itself, not a rescaled one that would sample only part of the domain.
+            @test all(i -> isequal(Symbolics.unwrap(args[i]), Symbolics.unwrap(sys.ivs[i])), free)
             for s in sweeps[only(free)]
                 tv, xv = [Symbolics.value(substitute(a, Dict(t => s, x => s); fold = Val(true))) for a in args]
                 rhs = Symbolics.value(substitute(bc.rhs, merge(pmap, Dict(t => tv, x => xv)); fold = Val(true)))
