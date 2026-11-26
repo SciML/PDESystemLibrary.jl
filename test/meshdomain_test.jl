@@ -1,6 +1,7 @@
 using PDESystemLibrary
 using PDEBase
-using ModelingToolkit: Differential, Symbolics, unwrap, wrap, iscall, operation, arguments
+using ModelingToolkit: Differential, Symbolics, unwrap, iscall, operation, arguments
+using .Symbolics: wrap
 using DomainSets: dimension
 using Test
 
@@ -68,13 +69,42 @@ function residuals(eqs, bcs)
     facets = [:bottom, :top, :left, :right]
     out = Dict{Symbol, Float64}(:pde => pde)
     for (name, bc) in zip(facets, bcs[1:4])
-        out[name] = maximum(abs(residual(bc, Dict("t" => t, "s" => s, "x" => s, "y" => 0.37))) for t in (0.13, 0.62), s in samples)
+        out[name] = maximum(
+            abs(residual(bc, Dict("t" => t, "s" => s, "x" => facetpoint(name, s)[1], "y" => facetpoint(name, s)[2])))
+                for t in (0.13, 0.62), s in samples
+        )
     end
     out[:initial] = maximum(
         abs(residual(bcs[5], Dict("t" => 0.0, "x" => x, "y" => y))) for x in samples, y in (0.17, 0.89)
     )
     return out
 end
+
+# Whether every call of the dependent variable `u` in a facet condition is a trace on the facet
+# `name` at the free time variable, and every normal derivative is taken on that same facet.
+function on_facet(domain, t, name, bc)
+    piece = Symbolics.value(PDEBase.boundarypiece(domain, name))
+    stored = only(filter(p -> p.name == name, PDEBase.boundarypieces(domain)))
+    found = Ref(0)
+    function check(expr)
+        e = unwrap(expr)
+        iscall(e) || return true
+        op, args = operation(e), arguments(e)
+        ok = all(check, args)
+        if string(op) == "u"
+            found[] += 1
+            ok &= length(args) == 2 && isequal(args[1], unwrap(t)) && isequal(Symbolics.value(args[2]), piece)
+        elseif op isa PDEBase.NormalDerivative
+            found[] += 1
+            ok &= op.piece == stored
+        end
+        return ok
+    end
+    return check(bc.lhs) && check(bc.rhs) && found[] >= 1
+end
+
+# Whether the initial condition is posed at time zero, as `u(0, x, y)`.
+initial_at_zero(uf, x, y, bc) = isequal(arguments(unwrap(bc.lhs)), arguments(unwrap(uf(0, x, y))))
 
 const MD_TOL = 1.0e-12
 
@@ -108,9 +138,17 @@ const MD_TOL = 1.0e-12
         @test res[name] < MD_TOL
     end
 
-    # Each mutation of the stored model must be caught by its own residual.
+    # The residual check trusts that each condition sits at its facet and the initial time, so
+    # verify the arguments of the dependent variable first.
     t, x, y = system.ivs
     u = only(system.dvs)
+    uf = wrap(operation(unwrap(u)))
+    for (name, bc) in zip((:bottom, :top, :left, :right), system.bcs[1:4])
+        @test on_facet(domain, t, name, bc)
+    end
+    @test initial_at_zero(uf, x, y, system.bcs[5])
+
+    # Each mutation of the stored model must be caught by its own residual.
     Dt, Dx, Dy = Differential(t), Differential(x), Differential(y)
     bcs = copy(system.bcs)
     robin_terms = arguments(unwrap(bcs[4].lhs))
@@ -125,4 +163,15 @@ const MD_TOL = 1.0e-12
     for (name, eqs, mutated) in mutants
         @test residuals(eqs, mutated)[name] > 1.0e-3
     end
+
+    # A Robin datum that depends on y differs from the stored one away from y = 0.37.
+    robin_y = [bcs[1:3]; bcs[4].lhs ~ 1 + y - 0.37; bcs[5:5]]
+    @test residuals(system.eqs, robin_y)[:right] > 0.3
+
+    # Location mutants have the right residuals but sit on the wrong facet or time.
+    Γ_bottom = PDEBase.boundarypiece(domain, :bottom)
+    Dn_bottom = PDEBase.NormalDerivative(Γ_bottom)
+    neumann_on_bottom = Dn_bottom(uf(t, Γ_bottom)) ~ 0
+    @test !on_facet(domain, t, :left, neumann_on_bottom)
+    @test !initial_at_zero(uf, x, y, uf(t, x, y) ~ bcs[5].rhs)
 end
