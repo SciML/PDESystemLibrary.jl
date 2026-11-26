@@ -39,6 +39,7 @@ function evaluate(expr, env; orders = (0, 0, 0))
         return evaluate(args[1], env; orders = Tuple(orders .+ op.order .* (1:3 .== i)))
     elseif op isa PDEBase.NormalDerivative
         name = facetname(args[1])
+        op.piece.name == name || error("normal derivative on $(op.piece.name) applied to a trace on $name")
         x, y, nx, ny = facetpoint(name, env["s"])
         t = env["t"]
         return nx * exact_u((orders[1], 1, 0), t, x, y) + ny * exact_u((orders[1], 0, 1), t, x, y)
@@ -67,7 +68,7 @@ function residuals(eqs, bcs)
     facets = [:bottom, :top, :left, :right]
     out = Dict{Symbol, Float64}(:pde => pde)
     for (name, bc) in zip(facets, bcs[1:4])
-        out[name] = maximum(abs(residual(bc, Dict("t" => t, "s" => s, "x" => s, "y" => s))) for t in (0.13, 0.62), s in samples)
+        out[name] = maximum(abs(residual(bc, Dict("t" => t, "s" => s, "x" => s, "y" => 0.37))) for t in (0.13, 0.62), s in samples)
     end
     out[:initial] = maximum(
         abs(residual(bcs[5], Dict("t" => 0.0, "x" => x, "y" => y))) for x in samples, y in (0.17, 0.89)
