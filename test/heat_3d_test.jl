@@ -4,6 +4,7 @@ using DomainSets
 using Symbolics
 
 @testset "heat_3d analytic solution" begin
+    is_zero(difference) = isequal(Symbolics.value(simplify(difference)), 0)
     system = only(get_pdesys_with_tags(["3D", "Heat", "Dirichlet"]))
     @test system.name == :heat_3d
     kval = only(system.ps)[2]
@@ -51,10 +52,7 @@ using Symbolics
     )
     pde_res = substitute(pde.lhs - pde.rhs, derivs)
     samples = [(0.1, 0.3, 0.4, 0.5), (0.2, 0.7, 0.1, 0.9), (0.4, 0.25, 0.5, 0.75)]
-    for (tv, xv, yv, zv) in samples
-        vals = merge(pmap, Dict(t => tv, x => xv, y => yv, z => zv))
-        @test abs(Symbolics.value(substitute(pde_res, vals; fold = Val(true)))) < 1.0e-8
-    end
+    @test is_zero(pde_res)
 
     # Trial fields v = exp(-t) sin(a pi x) sin(b pi y) sin(c pi z) have Dt(v) = -v and
     # (Dxx + Dyy + Dzz)(v) = -(a^2 + b^2 + c^2) pi^2 v, so the stored residual is
@@ -92,11 +90,9 @@ using Symbolics
         @test isequal(args[isnothing.(fixed)], Symbolics.unwrap.(system.ivs)[isnothing.(fixed)])
         @test fixed[1] == DomainSets.infimum(doms["t"]) ||
             any(i -> fixed[i + 1] in ends[i], 1:3)
-        for (tv, xv, yv, zv) in samples
-            coords = [Symbolics.value(substitute(a, Dict(t => tv, x => xv, y => yv, z => zv); fold = Val(true))) for a in args]
-            rhs = Symbolics.value(substitute(bc.rhs, merge(pmap, Dict(t => coords[1], x => coords[2], y => coords[3], z => coords[4])); fold = Val(true)))
-            @test abs(rhs - u(coords...)) < 1.0e-12
-        end
+        # A spatial face is exactly zero before any coordinate or diffusivity is substituted, so no
+        # time- or k-dependent right-hand side that vanishes at sampled points can pass.
+        fixed[1] === nothing && @test is_zero(bc.rhs)
     end
     # The initial plane and each of the six faces appear exactly once.
     t0 = DomainSets.infimum(doms["t"])
@@ -107,7 +103,6 @@ using Symbolics
     # compared with an independently written phi so that no higher mode can hide.
     phi = sin(pi * x) * sin(pi * y) * sin(pi * z)
     initial_rhs = only(system.bcs[findall(==([(1, 0.0)]), signatures)]).rhs
-    is_zero(difference) = isequal(Symbolics.value(simplify(difference)), 0)
     @test is_zero(initial_rhs - phi)
     @test is_zero(exact - exp(-3pi^2 * k_sym * t) * phi)
 end
