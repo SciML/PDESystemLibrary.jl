@@ -120,6 +120,11 @@ const MD_TOL = 1.0e-12
     @test length(PDEBase.boundarypieces(domain)) == 4
     @test [0.5, 0.5] ∈ domain
     @test [1.5, 0.5] ∉ domain
+    mesh = domain.mesh
+    @test PDEBase.contains_point(mesh, [0.5, 0.5])
+    for p in (Float64[], [0.5], [0.5, 0.5, 0.5])
+        @test !PDEBase.contains_point(mesh, p)
+    end
 
     @test length(system.eqs) == 1
     @test length(system.bcs) == 5   # four trace conditions, then the initial condition
@@ -148,8 +153,13 @@ const MD_TOL = 1.0e-12
     end
     @test initial_at_zero(uf, x, y, system.bcs[5])
 
-    # Each mutation of the stored model must be caught by its own residual.
+    # The residual check cannot tell the diffusion coefficients apart, because the exact
+    # solution has equal second derivatives in x and y, so compare the operator structurally.
     Dt, Dx, Dy = Differential(t), Differential(x), Differential(y)
+    is_heat(eq) = isequal(eq.lhs, Dt(u)) && isequal(eq.rhs, Dx(Dx(u)) + Dy(Dy(u)))
+    @test is_heat(only(system.eqs))
+
+    # Each mutation of the stored model must be caught by its own residual.
     bcs = copy(system.bcs)
     robin_terms = arguments(unwrap(bcs[4].lhs))
     robin_u = wrap(only(filter(a -> string(operation(a)) == "*", robin_terms)))
@@ -163,6 +173,8 @@ const MD_TOL = 1.0e-12
     for (name, eqs, mutated) in mutants
         @test residuals(eqs, mutated)[name] > 1.0e-3
     end
+
+    @test !is_heat(Dt(u) ~ 2 * Dx(Dx(u)))
 
     # A Robin datum that depends on y differs from the stored one away from y = 0.37.
     robin_y = [bcs[1:3]; bcs[4].lhs ~ 1 + y - 0.37; bcs[5:5]]

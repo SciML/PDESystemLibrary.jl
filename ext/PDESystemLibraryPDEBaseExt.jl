@@ -20,7 +20,7 @@ struct UnitSquareMesh end
 PDEBase.meshdim(::UnitSquareMesh) = 2
 PDEBase.facetset_names(::UnitSquareMesh) = (:left, :right, :bottom, :top)
 PDEBase.cellset_names(::UnitSquareMesh) = (:all,)
-PDEBase.contains_point(::UnitSquareMesh, p) = all(c -> 0 <= c <= 1, p)
+PDEBase.contains_point(::UnitSquareMesh, p) = length(p) == 2 && all(c -> 0 <= c <= 1, p)
 
 """
 # The Heat Equation on a `MeshDomain` with Trace Boundary Conditions.
