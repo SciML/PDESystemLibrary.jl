@@ -113,7 +113,8 @@ const MD_TOL = 1.0e-12
     @test system.name == :heat_2d_meshdomain
     @test all(tag -> tag in system.metadata, ["2D", "Dirichlet", "Neumann", "Robin"])
 
-    domain = only(filter(d -> d.domain isa MeshDomain, system.domain)).domain
+    pairing = only(filter(d -> d.domain isa MeshDomain, system.domain))
+    domain = pairing.domain
     @test dimension(domain) == 2
     @test Set(p.name for p in PDEBase.boundarypieces(domain)) ==
         Set([:left, :right, :bottom, :top])
@@ -148,6 +149,10 @@ const MD_TOL = 1.0e-12
     t, x, y = system.ivs
     u = only(system.dvs)
     uf = wrap(operation(unwrap(u)))
+    # The facet geometry assumes the mesh coordinates are (x, y), in that order.
+    mesh_order(p) = isequal(collect(arguments(p.variables)), unwrap.([x, y]))
+    @test mesh_order(pairing)
+    @test !mesh_order((y, x) ∈ domain)
     for (name, bc) in zip((:bottom, :top, :left, :right), system.bcs[1:4])
         @test on_facet(domain, t, name, bc)
     end
