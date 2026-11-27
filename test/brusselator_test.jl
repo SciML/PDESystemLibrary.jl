@@ -1,8 +1,7 @@
 using PDESystemLibrary
 using Test
 
-# Reference values of the interpolated TRBDF2 solution, recorded from master before
-# init_brusselator_2d stopped boxing N in brusselator_2d_loop (a runtime fix, not a numerical one).
+# Samples of the interpolated TRBDF2 reference solution.
 # The tolerance covers platform differences in the adaptive stiff solver (about 2e-8 relative on 32-bit).
 @testset "brusselator_2d reference solution" begin
     system = PDESystemLibrary.brusselator_2d()
@@ -23,4 +22,31 @@ using Test
         @test analytic["u(x, y, t)"](nothing, point...) ≈ u_expected[i] rtol = 1.0e-6
         @test analytic["v(x, y, t)"](nothing, point...) ≈ v_expected[i] rtol = 1.0e-6
     end
+end
+
+# Calling through a function barrier keeps the callback specialized, so any allocation measured
+# is the callback's own. A captured variable boxed as Core.Box allocated ~1 MB per call
+# (917 KB on 32-bit); the budget leaves room for incidental allocations on other Julia versions.
+function rhs_allocations(f, du, u, p, t)
+    f(du, u, p, t)
+    return @allocated f(du, u, p, t)
+end
+
+@testset "brusselator_2d reference right-hand side" begin
+    prob, xyd = PDESystemLibrary.brusselator_2d_reference_problem()
+    f = prob.f.f
+    u = fill(1.0, size(prob.u0))
+    du_before = similar(u)
+    du_after = similar(u)
+
+    @test rhs_allocations(f, du_before, u, prob.p, 1.0) < 1024
+
+    # A uniform state has no diffusion, so the forcing onset at t = 1.1 is the only difference.
+    f(du_before, u, prob.p, 1.0)
+    f(du_after, u, prob.p, 1.2)
+    inside = (argmin(abs.(xyd .- 0.3)), argmin(abs.(xyd .- 0.6)))
+    outside = (length(xyd), length(xyd))
+    @test du_after[inside..., 1] - du_before[inside..., 1] ≈ 5.0
+    @test du_after[outside..., 1] == du_before[outside..., 1]
+    @test du_after[:, :, 2] == du_before[:, :, 2]
 end
