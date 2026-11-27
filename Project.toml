@@ -14,6 +14,12 @@ RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
+[weakdeps]
+PDEBase = "a7812802-0625-4b9e-961c-d332478797e5"
+
+[extensions]
+PDESystemLibraryPDEBaseExt = "PDEBase"
+
 [compat]
 CommonSolve = "0.2"
 DomainSets = "0.7.17, 0.8"
@@ -28,6 +34,7 @@ OptimizationOptimJL = "0.4.13"
 OrdinaryDiffEq = "7"
 OrdinaryDiffEqCore = "4.4"
 OrdinaryDiffEqSDIRK = "2"
+PDEBase = "0.1.40"
 PrecompileTools = "1"
 RuntimeGeneratedFunctions = "0.5"
 SafeTestsets = "0.1"
@@ -46,9 +53,10 @@ NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 OrdinaryDiffEqCore = "bbf590c4-e513-4bbe-9b18-05decba2e5d8"
+PDEBase = "a7812802-0625-4b9e-961c-d332478797e5"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "DomainSets", "MethodOfLines", "Lux", "ModelingToolkit", "NonlinearSolve", "OptimizationOptimJL", "OrdinaryDiffEq", "OrdinaryDiffEqCore", "SafeTestsets", "SciMLTesting"]
+test = ["Test", "DomainSets", "MethodOfLines", "Lux", "ModelingToolkit", "NonlinearSolve", "OptimizationOptimJL", "OrdinaryDiffEq", "OrdinaryDiffEqCore", "PDEBase", "SafeTestsets", "SciMLTesting"]
