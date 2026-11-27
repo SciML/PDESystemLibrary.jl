@@ -1,3 +1,53 @@
+brusselator_f(x, y, t) = (((x - 0.3)^2 + (y - 0.6)^2) <= 0.1^2) * (t >= 1.1) * 5.0
+
+# The reference ODEProblem for the 2D Brusselator on a periodic N x N grid, and the grid.
+function brusselator_2d_reference_problem()
+    N = 32
+    xyd_brusselator = range(0, stop = 1, length = N)
+
+    limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
+    function brusselator_2d_loop(du, ud, p, td)
+        A, B, alpha, dx = p
+        alpha = alpha / dx^2
+        return @inbounds for I in CartesianIndices((N, N))
+            i, j = Tuple(I)
+            xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
+            ip1, im1,
+                jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
+                limit(j - 1, N)
+            du[i, j, 1] = alpha *
+                (
+                ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
+                    4ud[i, j, 1]
+            ) +
+                B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
+                brusselator_f(xd, yd, td)
+            du[i, j, 2] = alpha *
+                (
+                ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
+                    4ud[i, j, 2]
+            ) +
+                A * ud[i, j, 1] - ud[i, j, 1]^2 * ud[i, j, 2]
+        end
+    end
+    p = (3.4, 1.0, 10.0, step(xyd_brusselator))
+
+    function init_brusselator_2d(xyd)
+        n = length(xyd)
+        ud = zeros(n, n, 2)
+        for I in CartesianIndices((n, n))
+            xd = xyd[I[1]]
+            yd = xyd[I[2]]
+            ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
+            ud[I, 2] = 27 * (xd * (1 - xd))^(3 / 2)
+        end
+        return ud
+    end
+    u0_manual = init_brusselator_2d(xyd_brusselator)
+    prob = ODEProblem(brusselator_2d_loop, u0_manual, (0.0, 11.5), p)
+    return prob, xyd_brusselator
+end
+
 """
 # The Brusselator Equation in 2D
 
@@ -44,8 +94,6 @@ function brusselator_2d()
 
     ∇²(u) = Dxx(u) + Dyy(u)
 
-    brusselator_f(x, y, t) = (((x - 0.3)^2 + (y - 0.6)^2) <= 0.1^2) * (t >= 1.1) * 5.0
-
     x_min = y_min = t_min = 0.0
     x_max = y_max = 1.0
     t_max = 11.5
@@ -77,49 +125,8 @@ function brusselator_2d()
     ]
 
     # Solve reference problem
-    N = 32
-    xyd_brusselator = range(0, stop = 1, length = N)
-
-    limit(a, N) = a == N + 1 ? 1 : a == 0 ? N : a
-    function brusselator_2d_loop(du, ud, p, td)
-        A, B, alpha, dx = p
-        alpha = alpha / dx^2
-        return @inbounds for I in CartesianIndices((N, N))
-            i, j = Tuple(I)
-            xd, yd = xyd_brusselator[I[1]], xyd_brusselator[I[2]]
-            ip1, im1,
-                jp1, jm1 = limit(i + 1, N), limit(i - 1, N), limit(j + 1, N),
-                limit(j - 1, N)
-            du[i, j, 1] = alpha *
-                (
-                ud[im1, j, 1] + ud[ip1, j, 1] + ud[i, jp1, 1] + ud[i, jm1, 1] -
-                    4ud[i, j, 1]
-            ) +
-                B + ud[i, j, 1]^2 * ud[i, j, 2] - (A + 1) * ud[i, j, 1] +
-                brusselator_f(xd, yd, td)
-            du[i, j, 2] = alpha *
-                (
-                ud[im1, j, 2] + ud[ip1, j, 2] + ud[i, jp1, 2] + ud[i, jm1, 2] -
-                    4ud[i, j, 2]
-            ) +
-                A * ud[i, j, 1] - ud[i, j, 1]^2 * ud[i, j, 2]
-        end
-    end
-    p = (3.4, 1.0, 10.0, step(xyd_brusselator))
-
-    function init_brusselator_2d(xyd)
-        N = length(xyd)
-        ud = zeros(N, N, 2)
-        for I in CartesianIndices((N, N))
-            xd = xyd[I[1]]
-            yd = xyd[I[2]]
-            ud[I, 1] = 22 * (yd * (1 - yd))^(3 / 2)
-            ud[I, 2] = 27 * (xd * (1 - xd))^(3 / 2)
-        end
-        return ud
-    end
-    u0_manual = init_brusselator_2d(xyd_brusselator)
-    prob = ODEProblem(brusselator_2d_loop, u0_manual, (0.0, 11.5), p)
+    prob, xyd_brusselator = brusselator_2d_reference_problem()
+    N = length(xyd_brusselator)
 
     msol = solve(prob, TRBDF2(), saveat = 0.01) # 2.771 s (5452 allocations: 65.73 MiB)
 
