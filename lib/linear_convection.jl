@@ -367,6 +367,97 @@ end
 
 add_systems!(all_systems, funcs, linear_convection_dirichlet4, "funcconvneg")
 
+# Fixed-point BigInt arithmetic (value = n / 2^p) for the γL > 1 series, whose terms of size e^{γL}
+# cancel to O(1). It uses only public BigInt operations, so it neither reads nor sets the global
+# BigFloat precision, which is process-wide on Julia 1.10.
+function fixed(x, p)
+    m, e = frexp(Float64(x))
+    n = BigInt(ldexp(m, 53))
+    return p + e - 53 >= 0 ? n << (p + e - 53) : n >> -(p + e - 53)
+end
+
+function fixedexp(x, p)
+    m = max(ndigits(abs(x); base = 2) - p + 16, 0)  # reduce below 2^-16, square back m times
+    r = x >> m
+    term = total = BigInt(1) << p
+    j = 0
+    while term != 0
+        term = div((term * r) >> p, j += 1)
+        total += term
+    end
+    for _ in 1:m
+        total = (total * total) >> p
+    end
+    return total
+end
+
+function fixedsincos(x, p)
+    sn = cs = BigInt(0)
+    term = BigInt(1) << p
+    j = 0
+    while term != 0
+        j % 4 == 0 ? (cs += term) : j % 4 == 1 ? (sn += term) : j % 4 == 2 ? (cs -= term) : (sn -= term)
+        term = div((term * x) >> p, j += 1)
+    end
+    return sn, cs
+end
+
+function fixedpi(p)  # Machin: 16 atan(1/5) - 4 atan(1/239)
+    function ataninv(n)
+        x = (BigInt(1) << p) ÷ n
+        total = x
+        for k in 3:2:p
+            x = x ÷ n^2
+            x == 0 && break
+            total += (k % 4 == 1 ? 1 : -1) * (x ÷ k)
+        end
+        return total
+    end
+    return 16 * ataninv(5) - 4 * ataninv(239)
+end
+
+function tofloat(total, p)
+    shift = max(ndigits(abs(total); base = 2) - 64, 0)
+    return ldexp(Float64(total >> shift), shift - p)
+end
+
+# steady + transient of the convection_diffusion solution (see there) for γ > 0, in fixed point
+# with 128 + ⌈3γL⌉ bits. The solution is scale invariant, u(L, k, γ, t, z) = u(1, k t / L², γL, 1, z / L),
+# so it is evaluated in those dimensionless variables, which keeps every operand well inside the fixed-point
+# range whatever the units. The series is summed with the recurrences
+# e^{-k t μₙ²} = e^{-k t μ₁²n²} and sin(nθ) = 2cos(θ) sin((n-1)θ) - sin((n-2)θ).
+function convdiff_fixed(L, k, γ, t, z, nterms)
+    L, k, γ, t, z = Float64.((L, k, γ, t, z))
+    γL = γ * L
+    p = 128 + ceil(Int, 3γL)
+    one_ = BigInt(1) << p
+    mul(a, b) = (a * b) >> p
+    quo(a, b) = div(a << p, b)
+    γₚ, zₚ = fixed.((γL, z / L), p)
+    steady = quo(one_ - fixedexp(-2mul(γₚ, zₚ), p), one_ - fixedexp(-2γₚ, p))
+    # No terms are needed once e^{-k t μ₁²} has underflowed (k t / L² can overflow Float64).
+    nterms == 0 && return tofloat(steady, p)
+    kt = fixed((k / L) * (t / L), p)
+    μ₁ = fixedpi(p)
+    sinθ, cosθ = fixedsincos(mul(μ₁, zₚ), p)
+    γ² = mul(γₚ, γₚ)
+    decay = fixedexp(-mul(kt, mul(μ₁, μ₁)), p)  # e^{-k t μ₁²}
+    q, ratio, step = one_, decay, mul(decay, decay)
+    sₙ₋₁, sₙ = BigInt(0), sinθ
+    series = BigInt(0)
+    for n in 1:nterms
+        q = mul(q, ratio)
+        q == 0 && break
+        ratio = mul(ratio, step)
+        μ = n * μ₁
+        term = mul(quo(2μ, γ² + mul(μ, μ)), mul(q, sₙ))
+        series += iseven(n) ? term : -term
+        sₙ₋₁, sₙ = sₙ, mul(2cosθ, sₙ) - sₙ₋₁
+    end
+    transient = mul(mul(fixedexp(mul(γₚ, one_ - zₚ), p), fixedexp(-mul(kt, γ²), p)), series)
+    return tofloat(steady + transient, p)
+end
+
 """
 # Convection Diffusion Equation in 1D
 
@@ -379,6 +470,8 @@ It is initialized with a zero profile, and the boundary conditions are set to 1 
 ```math
 \\frac{\\partial u}{\\partial t} = \\kappa \\frac{\\partial^2 u}{\\partial z^2} + v \\frac{\\partial u}{\\partial z} +
 ```
+
+The analytic solution sums at most 50000 sine-series terms and throws an `ArgumentError` naming the minimum supported `t` when more would be needed (about `t ≥ 1.6e-7` for `convdiff1` and `1.6e-5` for `convdiff3`).
 
 Reference Solution found here: https://www.12000.org/my_notes/diffusion_convection_PDE/diffusion_convection_PDE.htm
 Author of reference solution: Nasser M. Abbasi
@@ -406,36 +499,58 @@ function convection_diffusion(L, ps, name = :convection_diffusion)
         z ∈ Interval(0.0, L),
     ]
 
-    # Analytic/reference solution
-    λ(n) = (n * π / L)^2
+    # Analytic/reference solution. With γ = v/2k and μₙ = nπ/L, f = fₛ + w where
+    # fₛ = expm1(-2γz)/expm1(-2γL) is the steady state and
+    # w = Σₙ 2μₙ(-1)ⁿ e^{γ(L-z) - k(γ²+μₙ²)t} sin(μₙz) / (L(γ²+μₙ²))
+    # solves the homogeneous problem with initial data -fₛ.
+    maxiters = 50_000
+    # Any real length is evaluated as a Float64, so no BigFloat or Rational arithmetic is involved.
+    Lf = Float64(L)
 
-    maxiters = 1000
+    # The solution depends only on γL, kt/L² and z/L, so everything below is evaluated in the
+    # dimensionless variables γ̂ = γL, τ = kt/L² and ξ = z/L, which cannot overflow or underflow with the units.
+    function steady(γ̂, ξ)
+        # Rewritten for γ̂ < 0 so no exponential exceeds 1.
+        return γ̂ < 0 ? exp(-2γ̂ * (ξ - 1)) * expm1(2γ̂ * ξ) / expm1(2γ̂) :
+            γ̂ == 0 ? ξ : expm1(-2γ̂ * ξ) / expm1(-2γ̂)
+    end
 
-    function A(ps, t, z)
-        k = ps[1]
-        v = ps[2]
-        return exp(-((t * v^2) / (4k) + (v * z) / (2k)))
+    # The terms are bounded by e^{γ̂(1-ξ) - τ(nπ)²}, so truncate where that is below e^{-40}.
+    function seriesterms(k, t, z, γ̂)
+        reach = 40 + max(γ̂ * (1 - z / Lf), 0)
+        nterms = sqrt(reach / ((k / Lf) * (t / Lf))) / π
+        nterms <= maxiters || throw(
+            ArgumentError(
+                "convection_diffusion analytic solution needs ≈$(round(nterms)) series terms at " *
+                    "t = $t, z = $z but is limited to $maxiters; " *
+                    "use t ≥ $(Lf / k * (Lf * reach / (π^2 * Float64(maxiters)^2)))"
+            )
+        )
+        return ceil(Int, nterms)
+    end
+
+    function transient(τ, γ̂, ξ, nterms)
+        return sum(1:nterms; init = 0.0) do n
+            μ = n * π
+            2μ * (-1)^n * exp(γ̂ * (1 - ξ) - (γ̂^2 + μ^2) * τ) * sin(μ * ξ) / (γ̂^2 + μ^2)
+        end
     end
 
     function u(ps, t, z)
-        k = ps[1]
-        v = ps[2]
-        a = z / L * exp((t * v^2) / (4k) + (v * L) / (2k))
-        s = mapreduce((+), 1:maxiters) do n
-            acu = (
-                2 * (-1)^n * v^2 * exp(-k * λ(n) * t + (v * L) / (2k)) *
-                    (exp(k * λ(n) * t + (t * v^2) / (4k)) - 1)
-            ) /
-                (n * π * (4 * k^2 * λ(n) + v^2))
-            acu += 2 / L * ((-1)^n) * exp(v * L / (2k)) * exp(-k * λ(n) * t) / sqrt(λ(n))
-            acu *= sin(λ(n) * z)
-
-            acu
-        end
-        return a + s
+        t == 0 && return f_0(z)
+        k, v, t, z = Float64.((ps[1], ps[2], t, z))
+        # The boundary values are prescribed; no series is needed for them.
+        z == 0 && return 0.0
+        z == Lf && return 1.0
+        γ̂ = (v / k) * (Lf / 2)
+        nterms = seriesterms(k, t, z, γ̂)
+        # For γ̂ > 1 the terms are of size e^{γ̂} while the sum is O(1), so
+        # carry enough extra bits to survive the cancellation.
+        γ̂ > 1 && return convdiff_fixed(1.0, 1.0, γ̂, (k / Lf) * (t / Lf), z / Lf, nterms)
+        return steady(γ̂, z / Lf) + transient((k / Lf) * (t / Lf), γ̂, z / Lf, nterms)
     end
 
-    ref = [f(t, z) => (ps, t, z) -> A(ps, t, z) * u(ps, t, z)]
+    ref = [f(t, z) => u]
 
     tags = ["1D", "Dirichlet", "Linear", "Advection", "Diffusion", "Monotonic"]
 
